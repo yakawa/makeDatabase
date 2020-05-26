@@ -6,7 +6,7 @@ import (
 	"github.com/yakawa/makeDatabase/common/token"
 )
 
-type Lexer struct {
+type lexer struct {
 	src        []rune
 	currentPos int
 	readPos    int
@@ -14,13 +14,20 @@ type Lexer struct {
 	line       int
 }
 
-func NewLexer(src string) *Lexer {
-	return &Lexer{
+// Tokenize
+func Tokenize(src string) (tokens []token.Token, err error) {
+	l := new(src)
+	tokens, err = l.tokenize()
+	return
+}
+
+func new(src string) *lexer {
+	return &lexer{
 		src: []rune(src),
 	}
 }
 
-func (l *Lexer) Tokenize() (tokens []token.Token) {
+func (l *lexer) tokenize() (tokens []token.Token, err error) {
 	ch := l.readChar()
 	for ch != 0 {
 		switch ch {
@@ -31,10 +38,10 @@ func (l *Lexer) Tokenize() (tokens []token.Token) {
 				ln := l.line
 				po := l.pos
 
-				s, err := l.readString('"')
-				if err != nil {
+				s, e := l.readString('"')
+				if e != nil {
 					tokens = append(tokens, token.Token{Type: token.INVALID})
-					return
+					return tokens, e
 				}
 				tokens = append(tokens, token.Token{Type: token.STRING, Literal: s, Pos: po, Line: ln})
 			}
@@ -49,10 +56,10 @@ func (l *Lexer) Tokenize() (tokens []token.Token) {
 				ln := l.line
 				po := l.pos
 
-				s, err := l.readString('\'')
-				if err != nil {
+				s, e := l.readString('\'')
+				if e != nil {
 					tokens = append(tokens, token.Token{Type: token.INVALID})
-					return
+					return tokens, e
 				}
 				tokens = append(tokens, token.Token{Type: token.STRING, Literal: s, Pos: po, Line: ln})
 			}
@@ -149,7 +156,7 @@ func (l *Lexer) Tokenize() (tokens []token.Token) {
 	return
 }
 
-func (l *Lexer) readChar() rune {
+func (l *lexer) readChar() rune {
 	if l.currentPos >= len(l.src) {
 		return 0
 	}
@@ -159,14 +166,14 @@ func (l *Lexer) readChar() rune {
 	return r
 }
 
-func (l *Lexer) peekChar() rune {
+func (l *lexer) peekChar() rune {
 	if l.currentPos >= len(l.src) {
 		return 0
 	}
 	return l.src[l.currentPos]
 }
 
-func (l *Lexer) makeToken(s []rune, t token.Type) (r token.Token) {
+func (l *lexer) makeToken(s []rune, t token.Type) (r token.Token) {
 	r.Type = t
 	r.Literal = string(s)
 
@@ -176,7 +183,7 @@ func (l *Lexer) makeToken(s []rune, t token.Type) (r token.Token) {
 	return r
 }
 
-func (l *Lexer) readString(q rune) (s string, err error) {
+func (l *lexer) readString(q rune) (s string, err error) {
 	s = ""
 	ch := l.readChar()
 	loop := true
@@ -200,7 +207,7 @@ func (l *Lexer) readString(q rune) (s string, err error) {
 	return
 }
 
-func (l *Lexer) readNumber(ch rune) (s string) {
+func (l *lexer) readNumber(ch rune) (s string) {
 	s = string(ch)
 	for isDigit(l.peekChar()) {
 		ch = l.readChar()
@@ -218,7 +225,7 @@ func (l *Lexer) readNumber(ch rune) (s string) {
 	return
 }
 
-func (l *Lexer) readIdentifier(ch rune) (s string) {
+func (l *lexer) readIdentifier(ch rune) (s string) {
 	s = string(ch)
 	for !isSymbol(l.peekChar()) || (l.peekChar() == '_') {
 		ch = l.readChar()

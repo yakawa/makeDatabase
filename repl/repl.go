@@ -6,7 +6,7 @@ import (
 
 	"github.com/chzyer/readline"
 
-	"github.com/yakawa/makeDatabase/compiler/lexer"
+	"github.com/yakawa/makeDatabase/compiler"
 	"github.com/yakawa/makeDatabase/logger"
 )
 
@@ -54,10 +54,6 @@ func Start(i io.Reader, w io.Writer, we io.Writer) {
 			sql += "\n"
 		}
 		logger.Infof("SQL: %s", sql)
-		l := lexer.NewLexer(sql)
-		tk := l.Tokenize()
-		for i, t := range tk {
-			logger.Tracef("[%d] Type: %s", i, t.Type.String())
-		}
+		compiler.Compile(sql)
 	}
 }
