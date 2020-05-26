@@ -55,5 +55,6 @@ func Start(i io.Reader, w io.Writer, we io.Writer) {
 		}
 		logger.Infof("SQL: %s", sql)
 		compiler.Compile(sql)
+		rl.SaveHistory(sql)
 	}
 }

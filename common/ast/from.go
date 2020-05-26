@@ -20,6 +20,7 @@ type JoinClause struct {
 	Natural              bool
 	Left                 bool
 	Right                bool
+	Inner                bool
 	Cross                bool
 	Expr                 *Expression
 	ColumnNames          []string

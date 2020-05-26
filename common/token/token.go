@@ -107,6 +107,7 @@ const (
 	K_RANGE
 	K_RECURSIVE
 	K_REGEXP
+	K_RIGHT
 	K_ROW
 	K_ROWS
 	K_SELECT
@@ -257,6 +258,8 @@ func LookupKeyword(k string) Type {
 		return K_RECURSIVE
 	case "REGEXP":
 		return K_REGEXP
+	case "RIGHT":
+		return K_RIGHT
 	case "ROW":
 		return K_ROW
 	case "ROWS":

@@ -1376,6 +1376,18 @@ func TestTokenize(t *testing.T) {
 			},
 		},
 		{
+			"RIGHT",
+			[]token.Token{
+				{
+					Type:    token.K_RIGHT,
+					Literal: "RIGHT",
+				},
+				{
+					Type: token.EOS,
+				},
+			},
+		},
+		{
 			"ROW",
 			[]token.Token{
 				{
