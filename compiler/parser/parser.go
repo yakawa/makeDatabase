@@ -13,6 +13,33 @@ type parser struct {
 
 	currentToken token.Token
 	pos          int
+
+	unaryParseFunction  map[token.Type]unaryOpeFunction
+	binaryParseFunction map[token.Type]binaryOpeFunction
+}
+
+type (
+	unaryOpeFunction  func() (*ast.Expression, error)
+	binaryOpeFunction func() (*ast.Expression, error)
+)
+
+const (
+	_ int = iota
+	LOWEST
+	LOGICAL_AND
+	LOGICAL_NOT
+	EQUALS
+	LESSGREATER
+	SUM
+	PRODUCT
+	PREFIX
+)
+
+var precedences = map[token.Type]int{
+	token.ASTERISK:  PRODUCT,
+	token.SOLIDAS:   PRODUCT,
+	token.PLUSSIGN:  SUM,
+	token.MINUSSIGN: SUM,
 }
 
 // Parse
@@ -23,9 +50,21 @@ func Parse(tokens []token.Token) (*ast.SQL, error) {
 }
 
 func new(tokens []token.Token) *parser {
-	return &parser{
+	p := &parser{
 		tokens: tokens,
 	}
+
+	p.unaryParseFunction = make(map[token.Type]unaryOpeFunction)
+	p.binaryParseFunction = make(map[token.Type]binaryOpeFunction)
+
+	p.unaryParseFunction[token.NUMBER] = p.parseNumber
+
+	p.binaryParseFunction[token.PLUSSIGN] = p.parseBinaryExpr
+	p.binaryParseFunction[token.MINUSSIGN] = p.parseBinaryExpr
+	p.binaryParseFunction[token.ASTERISK] = p.parseBinaryExpr
+	p.binaryParseFunction[token.SOLIDAS] = p.parseBinaryExpr
+
+	return p
 }
 
 func (p *parser) parse() (a *ast.SQL, err error) {
@@ -89,18 +128,29 @@ func (p *parser) readToken() {
 	return
 }
 
+func (p *parser) rewindToken() {
+	if p.pos-2 < 0 {
+		p.currentToken = p.tokens[0]
+		p.pos = 1
+		return
+	}
+	p.currentToken = p.tokens[p.pos-2]
+	p.pos--
+	return
+}
+
 func (p *parser) peekToken() (t token.Token) {
-	if p.pos+1 >= len(p.tokens) {
+	if p.pos >= len(p.tokens) {
 		return token.Token{Type: token.EOS}
 	}
-	t = p.tokens[p.pos+1]
+	t = p.tokens[p.pos]
 	return
 }
 
 func (p *parser) peek2Token() (t token.Token) {
-	if p.pos+2 >= len(p.tokens) {
+	if p.pos+1 >= len(p.tokens) {
 		return token.Token{Type: token.EOS}
 	}
-	t = p.tokens[p.pos+2]
+	t = p.tokens[p.pos+1]
 	return
 }

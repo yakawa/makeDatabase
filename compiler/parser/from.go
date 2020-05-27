@@ -18,6 +18,13 @@ func (p *parser) parseFrom() (fr *ast.FromClause, err error) {
 		if e != nil {
 			return fr, e
 		}
+		if p.currentToken.Type == token.COMMA || p.currentToken.Type == token.K_NATURAL || p.currentToken.Type == token.K_LEFT || p.currentToken.Type == token.K_INNER || p.currentToken.Type == token.K_CROSS || p.currentToken.Type == token.K_JOIN {
+			j, e := p.parseJoin()
+			if e != nil {
+				return fr, e
+			}
+			ts.JoinClause = j
+		}
 		fr.ToS = ts
 		break
 	}
@@ -62,9 +69,6 @@ func (p *parser) parseTableOrSubquery() (ts *ast.TableOrSubquery, err error) {
 				if e != nil {
 					return ts, e
 				}
-				j.LeftTableOrSubquery = ts2
-			}
-			if j != nil {
 				ts.JoinClause = j
 			}
 		}
@@ -124,7 +128,7 @@ func (p *parser) parseJoin() (j *ast.JoinClause, err error) {
 	if e != nil {
 		return j, e
 	}
-	j.RightTableOrSubquery = ss3
+	j.TableOrSubquery = ss3
 	if p.currentToken.Type == token.K_ON {
 		exp, e := p.parseExpression()
 		if e != nil {

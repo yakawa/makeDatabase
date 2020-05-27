@@ -15,13 +15,12 @@ type TableOrSubquery struct {
 }
 
 type JoinClause struct {
-	LeftTableOrSubquery  *TableOrSubquery
-	RightTableOrSubquery *TableOrSubquery
-	Natural              bool
-	Left                 bool
-	Right                bool
-	Inner                bool
-	Cross                bool
-	Expr                 *Expression
-	ColumnNames          []string
+	TableOrSubquery *TableOrSubquery
+	Natural         bool
+	Left            bool
+	Right           bool
+	Inner           bool
+	Cross           bool
+	Expr            *Expression
+	ColumnNames     []string
 }

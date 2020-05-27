@@ -16,6 +16,7 @@ func Compile(sql string) (err error) {
 	if err != nil {
 		logger.Errorf("%+v", err)
 	}
-	printer.PrintAST(a)
+	x := printer.PrintSQL(a)
+	logger.Infof("\n%s", x)
 	return
 }
