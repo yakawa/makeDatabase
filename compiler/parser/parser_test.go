@@ -285,6 +285,19 @@ func TestExpression(t *testing.T) {
        Column: c1
 `),
 		},
+		{"SELECT SUM();",
+			string(`SQL:
+				 SELECTStatement:
+				  SELECT:
+				   ALL: false
+				   DISTINCT: false
+				   ResultColumns:
+				    - Expression:
+				       Schema: d1
+				       Table: t1
+				       Column: c1
+				`),
+		},
 	}
 
 	for i, tc := range testCases {

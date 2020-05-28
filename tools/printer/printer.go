@@ -39,13 +39,9 @@ func printSelectClause(sc *ast.SelectClause, sp string) string {
 	var out bytes.Buffer
 	if sc.IsAll {
 		out.WriteString(fmt.Sprintf("%sALL: true\n", sp))
-	} else {
-		out.WriteString(fmt.Sprintf("%sALL: false\n", sp))
 	}
 	if sc.IsDistinct {
 		out.WriteString(fmt.Sprintf("%sDISTINCT: true\n", sp))
-	} else {
-		out.WriteString(fmt.Sprintf("%sDISTINCT: false\n", sp))
 	}
 	if len(sc.ResultColumns) != 0 {
 		out.WriteString(fmt.Sprintf("%sResultColumns:\n", sp))
@@ -150,6 +146,74 @@ func printExpression(ex *ast.Expression, sp string) string {
 		}
 		if len(ex.ColumnName.Column) != 0 {
 			out.WriteString(fmt.Sprintf("%sColumn: %s\n", sp, ex.ColumnName.Column))
+		}
+	}
+	if ex.Function != nil {
+		out.WriteString(fmt.Sprintf("%sFunction:\n", sp))
+		out.WriteString(fmt.Sprintf("%s", printFunctionExpression(ex.Function, sp+" ")))
+	}
+	return out.String()
+}
+
+func printFunctionExpression(f *ast.Function, sp string) string {
+	var out bytes.Buffer
+	out.WriteString(fmt.Sprintf("%sName: %s\n", sp, f.Name))
+	if f.Asterisk {
+		out.WriteString(fmt.Sprintf("%sAsterisk: true\n", sp))
+	}
+	if f.Distinct {
+		out.WriteString(fmt.Sprintf("%sDISTINCT: true\n", sp))
+	}
+	if len(f.Args) != 0 {
+		out.WriteString(fmt.Sprintf("%sARGS:\n", sp))
+		for _, a := range f.Args {
+			out.WriteString(fmt.Sprintf("%s - arg:\n", sp))
+			out.WriteString(fmt.Sprintf("%s", printExpression(&a, sp+"    ")))
+		}
+	}
+	if f.FilterExpr != nil {
+		out.WriteString(fmt.Sprintf("%sFilter:\n", sp))
+		out.WriteString(fmt.Sprintf("%s - Expression:\n", sp))
+		out.WriteString(fmt.Sprintf("%s", printExpression(f.FilterExpr, sp+"    ")))
+	}
+	if f.OverClause != nil {
+		out.WriteString(fmt.Sprintf("%sOver:\n", sp))
+		if len(f.OverClause.WindowName) != 0 {
+			out.WriteString(fmt.Sprintf("%s WindowName: %s\n", sp, f.OverClause.WindowName))
+		} else {
+			if len(f.OverClause.BaseWindowName) != 0 {
+				out.WriteString(fmt.Sprintf("%s BaseWindowName: %s\n", sp, f.OverClause.BaseWindowName))
+			}
+			if len(f.OverClause.PartitionExpr) != 0 {
+				out.WriteString(fmt.Sprintf("%s Partition:\n", sp))
+				for _, p := range f.OverClause.PartitionExpr {
+					out.WriteString(fmt.Sprintf("%s  - Expression:\n", sp))
+					out.WriteString(fmt.Sprintf("%s", printExpression(&p, sp+"     ")))
+				}
+			}
+			if len(f.OverClause.OrderBy) != 0 {
+				out.WriteString(fmt.Sprintf("%s OrderBy:\n", sp))
+				for _, o := range f.OverClause.OrderBy {
+					out.WriteString(fmt.Sprintf("%s  - Order:\n", sp))
+					out.WriteString(fmt.Sprintf("%s     Expression:\n", sp))
+					out.WriteString(fmt.Sprintf("%s", printExpression(o.Expr, sp+"      ")))
+					if len(o.CollateName) != 0 {
+						out.WriteString(fmt.Sprintf("%s     Collation: %s\n", sp, o.CollateName))
+					}
+					if o.Asc {
+						out.WriteString(fmt.Sprintf("%s     ASC: true\n", sp))
+					}
+					if o.Desc {
+						out.WriteString(fmt.Sprintf("%s     DESC: true\n", sp))
+					}
+					if o.NullsFirst {
+						out.WriteString(fmt.Sprintf("%s     NULLSFirst: true\n", sp))
+					}
+					if o.NullsLast {
+						out.WriteString(fmt.Sprintf("%s     NULLSLast: true\n", sp))
+					}
+				}
+			}
 		}
 	}
 	return out.String()

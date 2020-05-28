@@ -99,6 +99,8 @@ func (p *parser) parse() (a *ast.SQL, err error) {
 			err = errors.New("Parse Error: Unknown Token")
 			return
 		}
+		logger.Infof("%#+v", p.currentToken.Type.String())
+
 		p.readToken()
 	}
 	return
@@ -134,6 +136,7 @@ func (p *parser) parseSelectStatement() (ss *ast.SelectStatement, err error) {
 func (p *parser) readToken() {
 	if p.pos >= len(p.tokens) {
 		p.currentToken = token.Token{Type: token.EOS}
+		return
 	}
 	p.currentToken = p.tokens[p.pos]
 	p.pos++

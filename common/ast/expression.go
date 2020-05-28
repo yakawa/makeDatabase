@@ -78,7 +78,7 @@ type OverClause struct {
 	WindowName     string
 	BaseWindowName string
 	PartitionExpr  []Expression
-	OrderBy        *OrderClause
+	OrderBy        []OrderClause
 	FrameSpec      *FrameSpecification
 }
 

@@ -71,6 +71,7 @@ const (
 	K_EXCEPT
 	K_EXISTS
 	K_FALSE
+	K_FILTER
 	K_FIRST
 	K_FOLLOWING
 	K_FROM
@@ -186,6 +187,8 @@ func LookupKeyword(k string) Type {
 		return K_EXISTS
 	case "FALSE":
 		return K_FALSE
+	case "FILTER":
+		return K_FILTER
 	case "FIRST":
 		return K_FIRST
 	case "FOLLOWING":
