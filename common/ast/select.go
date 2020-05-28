@@ -42,7 +42,7 @@ type FrameSpecification struct {
 	Groups bool
 
 	Between             bool
-	UnboundPrecedeing1  bool
+	UnboundedPreceding1 bool
 	ExprPreceding1      *Expression
 	CurrentRow1         bool
 	ExprFollowing1      *Expression

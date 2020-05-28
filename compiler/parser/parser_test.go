@@ -16,8 +16,6 @@ func TestExpression(t *testing.T) {
 			string(`SQL:
  SELECTStatement:
   SELECT:
-   ALL: false
-   DISTINCT: false
    ResultColumns:
     - Expression:
        Number: 1
@@ -27,8 +25,6 @@ func TestExpression(t *testing.T) {
 			string(`SQL:
  SELECTStatement:
   SELECT:
-   ALL: false
-   DISTINCT: false
    ResultColumns:
     - Expression:
        Number: 1
@@ -39,8 +35,6 @@ func TestExpression(t *testing.T) {
 			string(`SQL:
  SELECTStatement:
   SELECT:
-   ALL: false
-   DISTINCT: false
    ResultColumns:
     - Expression:
        Number: 1
@@ -51,8 +45,6 @@ func TestExpression(t *testing.T) {
 			string(`SQL:
  SELECTStatement:
   SELECT:
-   ALL: false
-   DISTINCT: false
    ResultColumns:
     - Expression:
        String: "1"
@@ -62,8 +54,6 @@ func TestExpression(t *testing.T) {
 			string(`SQL:
  SELECTStatement:
   SELECT:
-   ALL: false
-   DISTINCT: false
    ResultColumns:
     - Expression:
        Literal: CURRENT_TIME
@@ -73,8 +63,6 @@ func TestExpression(t *testing.T) {
 			string(`SQL:
  SELECTStatement:
   SELECT:
-   ALL: false
-   DISTINCT: false
    ResultColumns:
     - Expression:
        Literal: CURRENT_DATE
@@ -84,8 +72,6 @@ func TestExpression(t *testing.T) {
 			string(`SQL:
  SELECTStatement:
   SELECT:
-   ALL: false
-   DISTINCT: false
    ResultColumns:
     - Expression:
        Literal: CURRENT_TIMESTAMP
@@ -95,8 +81,6 @@ func TestExpression(t *testing.T) {
 			string(`SQL:
  SELECTStatement:
   SELECT:
-   ALL: false
-   DISTINCT: false
    ResultColumns:
     - Expression:
        Literal: TRUE
@@ -106,8 +90,6 @@ func TestExpression(t *testing.T) {
 			string(`SQL:
  SELECTStatement:
   SELECT:
-   ALL: false
-   DISTINCT: false
    ResultColumns:
     - Expression:
        Literal: FALSE
@@ -117,8 +99,6 @@ func TestExpression(t *testing.T) {
 			string(`SQL:
  SELECTStatement:
   SELECT:
-   ALL: false
-   DISTINCT: false
    ResultColumns:
     - Expression:
        Literal: NULL
@@ -128,8 +108,6 @@ func TestExpression(t *testing.T) {
 			string(`SQL:
  SELECTStatement:
   SELECT:
-   ALL: false
-   DISTINCT: false
    ResultColumns:
     - Expression:
        PrefixOpe:
@@ -142,8 +120,6 @@ func TestExpression(t *testing.T) {
 			string(`SQL:
  SELECTStatement:
   SELECT:
-   ALL: false
-   DISTINCT: false
    ResultColumns:
     - Expression:
        BinaryOpe:
@@ -158,8 +134,6 @@ func TestExpression(t *testing.T) {
 			string(`SQL:
  SELECTStatement:
   SELECT:
-   ALL: false
-   DISTINCT: false
    ResultColumns:
     - Expression:
        BinaryOpe:
@@ -174,8 +148,6 @@ func TestExpression(t *testing.T) {
 			string(`SQL:
  SELECTStatement:
   SELECT:
-   ALL: false
-   DISTINCT: false
    ResultColumns:
     - Expression:
        BinaryOpe:
@@ -190,8 +162,6 @@ func TestExpression(t *testing.T) {
 			string(`SQL:
  SELECTStatement:
   SELECT:
-   ALL: false
-   DISTINCT: false
    ResultColumns:
     - Expression:
        BinaryOpe:
@@ -206,8 +176,6 @@ func TestExpression(t *testing.T) {
 			string(`SQL:
  SELECTStatement:
   SELECT:
-   ALL: false
-   DISTINCT: false
    ResultColumns:
     - Expression:
        BinaryOpe:
@@ -227,8 +195,6 @@ func TestExpression(t *testing.T) {
 			string(`SQL:
  SELECTStatement:
   SELECT:
-   ALL: false
-   DISTINCT: false
    ResultColumns:
     - Expression:
        BinaryOpe:
@@ -253,8 +219,6 @@ func TestExpression(t *testing.T) {
 			string(`SQL:
  SELECTStatement:
   SELECT:
-   ALL: false
-   DISTINCT: false
    ResultColumns:
     - Expression:
        Column: c1
@@ -264,8 +228,6 @@ func TestExpression(t *testing.T) {
 			string(`SQL:
  SELECTStatement:
   SELECT:
-   ALL: false
-   DISTINCT: false
    ResultColumns:
     - Expression:
        Table: t1
@@ -276,8 +238,6 @@ func TestExpression(t *testing.T) {
 			string(`SQL:
  SELECTStatement:
   SELECT:
-   ALL: false
-   DISTINCT: false
    ResultColumns:
     - Expression:
        Schema: d1
@@ -285,18 +245,116 @@ func TestExpression(t *testing.T) {
        Column: c1
 `),
 		},
-		{"SELECT SUM();",
+		{"SELECT COUNT(1);",
 			string(`SQL:
-				 SELECTStatement:
-				  SELECT:
-				   ALL: false
-				   DISTINCT: false
-				   ResultColumns:
-				    - Expression:
-				       Schema: d1
-				       Table: t1
-				       Column: c1
-				`),
+ SELECTStatement:
+  SELECT:
+   ResultColumns:
+    - Expression:
+       Function:
+        Name: COUNT
+        ARGS:
+         - arg:
+            Number: 1
+`),
+		},
+		{"SELECT COUNT(*);",
+			string(`SQL:
+ SELECTStatement:
+  SELECT:
+   ResultColumns:
+    - Expression:
+       Function:
+        Name: COUNT
+        Asterisk: true
+`),
+		},
+		{"SELECT SUM(c1, c2 * 2);",
+			string(`SQL:
+ SELECTStatement:
+  SELECT:
+   ResultColumns:
+    - Expression:
+       Function:
+        Name: SUM
+        ARGS:
+         - arg:
+            Column: c1
+         - arg:
+            BinaryOpe:
+             Operator: "*"
+             Ope1:
+              Column: c2
+             Ope2:
+              Number: 2
+`),
+		},
+		{"SELECT SUM(DISTINCT c1);",
+			string(`SQL:
+ SELECTStatement:
+  SELECT:
+   ResultColumns:
+    - Expression:
+       Function:
+        Name: SUM
+        DISTINCT: true
+        ARGS:
+         - arg:
+            Column: c1
+`),
+		},
+		{"SELECT SUM(DISTINCT c1);",
+			string(`SQL:
+ SELECTStatement:
+  SELECT:
+   ResultColumns:
+    - Expression:
+       Function:
+        Name: SUM
+        DISTINCT: true
+        ARGS:
+         - arg:
+            Column: c1
+`),
+		},
+		{"SELECT SUM(c1) FILTER (WHERE c2 = 3) OVER(test PARTITION BY c4, c5 ORDER BY c6 DESC NULLS LAST ROWS BETWEEN UNBOUNDED PRECEDING AND c4 PRECEDING EXCLUDE CURRENT ROW);",
+			string(`SQL:
+ SELECTStatement:
+  SELECT:
+   ResultColumns:
+    - Expression:
+       Function:
+        Name: SUM
+        ARGS:
+         - arg:
+            Column: c1
+        Filter:
+         - Expression:
+            BinaryOpe:
+             Operator: =
+             Ope1:
+              Column: c2
+             Ope2:
+              Number: 3
+        Over:
+         BaseWindowName: test
+         Partition:
+          - Expression:
+             Column: c4
+          - Expression:
+             Column: c5
+         OrderBy:
+          - Order:
+             Expression:
+              Column: c6
+             DESC: true
+         Frame:
+          Rows: true
+          UnboundedPreceding1: true
+          ExprPreceding2:
+           Column: c4
+          ExcludeCurrentRow: true
+`),
 		},
 	}
 

@@ -85,6 +85,8 @@ type OverClause struct {
 type CastOpe struct {
 	Expr     *Expression
 	TypeName string
+	IsN1     bool
+	IsN2     bool
 	N1       int
 	N2       int
 }

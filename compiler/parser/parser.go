@@ -41,6 +41,19 @@ var precedences = map[token.Type]int{
 	token.PLUSSIGN:  SUM,
 	token.MINUSSIGN: SUM,
 	token.CONCAT:    SUM,
+	token.EQUALS:    EQUALS,
+	token.NOTEQUALS: EQUALS,
+	token.K_COLLATE: EQUALS,
+	token.K_NOT:     EQUALS,
+	token.K_LIKE:    EQUALS,
+	token.K_REGEXP:  EQUALS,
+	token.K_GLOB:    EQUALS,
+	token.K_MATCH:   EQUALS,
+	token.K_ISNULL:  EQUALS,
+	token.K_NOTNULL: EQUALS,
+	token.K_IS:      EQUALS,
+	token.K_BETWEEN: EQUALS,
+	token.K_IN:      EQUALS,
 }
 
 // Parse
@@ -69,12 +82,30 @@ func new(tokens []token.Token) *parser {
 	p.unaryParseFunction[token.K_NULL] = p.parseLiteral
 	p.unaryParseFunction[token.K_TRUE] = p.parseLiteral
 	p.unaryParseFunction[token.K_FALSE] = p.parseLiteral
+	p.unaryParseFunction[token.K_CAST] = p.parseCastExpr
+	p.unaryParseFunction[token.K_NOT] = p.parseExistsExpr
+	p.unaryParseFunction[token.K_EXISTS] = p.parseExistsExpr
+	p.unaryParseFunction[token.K_CASE] = p.parseCaseExpr
 
 	p.binaryParseFunction[token.PLUSSIGN] = p.parseBinaryExpr
 	p.binaryParseFunction[token.MINUSSIGN] = p.parseBinaryExpr
 	p.binaryParseFunction[token.ASTERISK] = p.parseBinaryExpr
 	p.binaryParseFunction[token.SOLIDAS] = p.parseBinaryExpr
 	p.binaryParseFunction[token.CONCAT] = p.parseBinaryExpr
+	p.binaryParseFunction[token.EQUALS] = p.parseBinaryExpr
+	p.binaryParseFunction[token.NOTEQUALS] = p.parseBinaryExpr
+	p.binaryParseFunction[token.K_COLLATE] = p.parseCollateExpr
+	p.binaryParseFunction[token.K_LIKE] = p.parseStringFunc
+	p.binaryParseFunction[token.K_GLOB] = p.parseStringFunc
+	p.binaryParseFunction[token.K_MATCH] = p.parseStringFunc
+	p.binaryParseFunction[token.K_REGEXP] = p.parseStringFunc
+	p.binaryParseFunction[token.K_ISNULL] = p.parseNullExpr
+	p.binaryParseFunction[token.K_NOTNULL] = p.parseNullExpr
+	p.binaryParseFunction[token.K_IS] = p.parseIsExpr
+	p.binaryParseFunction[token.K_BETWEEN] = p.parseBetweenExpr
+	p.binaryParseFunction[token.K_IN] = p.parseInExpr
+
+	p.binaryParseFunction[token.K_NOT] = p.parseNotExpr
 
 	return p
 }
@@ -99,8 +130,6 @@ func (p *parser) parse() (a *ast.SQL, err error) {
 			err = errors.New("Parse Error: Unknown Token")
 			return
 		}
-		logger.Infof("%#+v", p.currentToken.Type.String())
-
 		p.readToken()
 	}
 	return

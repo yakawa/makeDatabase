@@ -28,6 +28,7 @@ func (p *parser) parseSelectClause() (sc *ast.SelectClause, err error) {
 			if e != nil {
 				return sc, e
 			}
+			//logger.Infof("%#+v", p.currentToken)
 			sc.ResultColumns = append(sc.ResultColumns, r)
 			if p.currentToken.Type != token.COMMA {
 				break
