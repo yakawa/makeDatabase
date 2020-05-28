@@ -1,10 +1,13 @@
 package ast
 
+import "github.com/yakawa/makeDatabase/common/token"
+
 type Expression struct {
 	Literal    *Literal
 	ColumnName *ColumnName
-	UnaryOpe   *UnaryOpe
+	PrefixOpe  *UnaryOpe
 	BinaryOpe  *BinaryOpe
+	PostfixOpe *UnaryOpe
 	Function   *Function
 	Expr       []Expression
 	Cast       *CastOpe
@@ -24,6 +27,7 @@ func (n *Expression) expressionNode() {
 type Literal struct {
 	Numeric          *Numeric
 	String           string
+	IsString         bool
 	Null             bool
 	True             bool
 	False            bool
@@ -41,6 +45,9 @@ type Numeric struct {
 	FL          float64
 }
 
+func (n *Numeric) expressionNode() {
+}
+
 type ColumnName struct {
 	Schema string
 	Table  string
@@ -48,14 +55,14 @@ type ColumnName struct {
 }
 
 type UnaryOpe struct {
-	Operator string
+	Operator token.Type
 	Expr     *Expression
 }
 
 type BinaryOpe struct {
-	Operator string
+	Operator token.Type
 	Expr1    *Expression
-	expr2    *Expression
+	Expr2    *Expression
 }
 
 type Function struct {

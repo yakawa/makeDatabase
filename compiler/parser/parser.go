@@ -20,7 +20,7 @@ type parser struct {
 
 type (
 	unaryOpeFunction  func() (*ast.Expression, error)
-	binaryOpeFunction func() (*ast.Expression, error)
+	binaryOpeFunction func(*ast.Expression) (*ast.Expression, error)
 )
 
 const (
@@ -40,6 +40,7 @@ var precedences = map[token.Type]int{
 	token.SOLIDAS:   PRODUCT,
 	token.PLUSSIGN:  SUM,
 	token.MINUSSIGN: SUM,
+	token.CONCAT:    SUM,
 }
 
 // Parse
@@ -58,11 +59,22 @@ func new(tokens []token.Token) *parser {
 	p.binaryParseFunction = make(map[token.Type]binaryOpeFunction)
 
 	p.unaryParseFunction[token.NUMBER] = p.parseNumber
+	p.unaryParseFunction[token.IDENT] = p.parseIdent
+	p.unaryParseFunction[token.STRING] = p.parseLiteral
+	p.unaryParseFunction[token.MINUSSIGN] = p.parsePrefixExpr
+	p.unaryParseFunction[token.LEFTPAREN] = p.parseGroupedExpr
+	p.unaryParseFunction[token.K_CURRENT_DATE] = p.parseLiteral
+	p.unaryParseFunction[token.K_CURRENT_TIME] = p.parseLiteral
+	p.unaryParseFunction[token.K_CURRENT_TIMESTAMP] = p.parseLiteral
+	p.unaryParseFunction[token.K_NULL] = p.parseLiteral
+	p.unaryParseFunction[token.K_TRUE] = p.parseLiteral
+	p.unaryParseFunction[token.K_FALSE] = p.parseLiteral
 
 	p.binaryParseFunction[token.PLUSSIGN] = p.parseBinaryExpr
 	p.binaryParseFunction[token.MINUSSIGN] = p.parseBinaryExpr
 	p.binaryParseFunction[token.ASTERISK] = p.parseBinaryExpr
 	p.binaryParseFunction[token.SOLIDAS] = p.parseBinaryExpr
+	p.binaryParseFunction[token.CONCAT] = p.parseBinaryExpr
 
 	return p
 }
@@ -153,4 +165,18 @@ func (p *parser) peek2Token() (t token.Token) {
 	}
 	t = p.tokens[p.pos+1]
 	return
+}
+
+func (p *parser) getCurrentPrecedence() int {
+	if p, ok := precedences[p.currentToken.Type]; ok {
+		return p
+	}
+	return LOWEST
+}
+
+func (p *parser) peekPrecedence() int {
+	if p, ok := precedences[p.peekToken().Type]; ok {
+		return p
+	}
+	return LOWEST
 }
