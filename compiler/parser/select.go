@@ -35,7 +35,6 @@ func (p *parser) parseSelectClause() (sc *ast.SelectClause, err error) {
 			}
 			p.readToken()
 		}
-
 		if p.currentToken.Type == token.EOS || p.currentToken.Type == token.SEMICOLON {
 			return
 		}
@@ -56,26 +55,6 @@ func (p *parser) parseSelectClause() (sc *ast.SelectClause, err error) {
 		if p.currentToken.Type == token.K_WINDOW {
 			//p.parseWindow()
 		}
-	} else if p.currentToken.Type == token.K_VALUES {
-	}
-	if p.currentToken.Type == token.K_UNION || p.currentToken.Type == token.K_INTERSECT || p.currentToken.Type == token.K_EXCEPT {
-		cm := &ast.CompoundOperator{}
-		if p.currentToken.Type == token.K_UNION && p.peekToken().Type == token.K_ALL {
-			cm.UnionAll = true
-		} else if p.currentToken.Type == token.K_UNION && p.peekToken().Type != token.K_ALL {
-			cm.Union = true
-		} else if p.currentToken.Type == token.K_INTERSECT {
-			cm.Intersect = true
-		} else {
-			cm.Except = true
-		}
-		p.readToken()
-		sc2, e := p.parseSelectClause()
-		if e != nil {
-			return sc, e
-		}
-		cm.SelectClause = sc2
-		sc.CompoundOpeator = cm
 	}
 	return
 }

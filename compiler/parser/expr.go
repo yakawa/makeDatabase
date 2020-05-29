@@ -786,6 +786,7 @@ func (p *parser) parseBetweenExpr(left *ast.Expression) (expr *ast.Expression, e
 	expr.Between = r
 	return
 }
+
 func (p *parser) parseInExpr(left *ast.Expression) (expr *ast.Expression, err error) {
 	logger.Tracef("Parse: In")
 	defer logger.Tracef("Parse: In End")

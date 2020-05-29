@@ -125,7 +125,7 @@ func (p *parser) parse() (a *ast.SQL, err error) {
 		switch p.currentToken.Type {
 		case token.SEMICOLON, token.EOS:
 			return
-		case token.K_WITH, token.K_SELECT:
+		case token.K_WITH, token.K_SELECT, token.K_VALUES:
 			ss, err := p.parseSelectStatement()
 			if err != nil {
 				return a, err
@@ -152,12 +152,37 @@ func (p *parser) parseSelectStatement() (ss *ast.SelectStatement, err error) {
 			return ss, e
 		}
 		ss.WithClause = wc
-	case token.K_SELECT, token.K_VALUES:
+	case token.K_SELECT:
 		sc, e := p.parseSelectClause()
 		if e != nil {
 			return ss, e
 		}
 		ss.SelectClause = sc
+	case token.K_VALUES:
+		vl, e := p.parseValuesClause()
+		if e != nil {
+			return ss, e
+		}
+		ss.ValuesClause = vl
+	case token.K_UNION, token.K_INTERSECT, token.K_EXCEPT:
+		cm := &ast.CompoundOperator{}
+		if p.currentToken.Type == token.K_UNION && p.peekToken().Type == token.K_ALL {
+			cm.UnionAll = true
+		} else if p.currentToken.Type == token.K_UNION && p.peekToken().Type != token.K_ALL {
+			cm.Union = true
+		} else if p.currentToken.Type == token.K_INTERSECT {
+			cm.Intersect = true
+		} else {
+			cm.Except = true
+		}
+		p.readToken()
+		sc2, e := p.parseSelectStatement()
+		if e != nil {
+			return ss, e
+		}
+		cm.SelectStatement = sc2
+		ss.CompoundOpeator = cm
+
 	case token.K_ORDER:
 	case token.K_LIMIT:
 	default:

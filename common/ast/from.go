@@ -1,26 +1,19 @@
 package ast
 
 type FromClause struct {
-	ToS        *TableOrSubquery
-	JoinClause *JoinClause
+	ToS []TableOrSubquery
 }
 
 type TableOrSubquery struct {
-	Schema          string
-	TableName       string
-	Alias           string
-	TableOrSubquery *TableOrSubquery
-	JoinClause      *JoinClause
-	SelectStatement *SelectStatement
-}
-
-type JoinClause struct {
-	TableOrSubquery *TableOrSubquery
-	Natural         bool
-	Left            bool
-	Right           bool
-	Inner           bool
-	Cross           bool
-	Expr            *Expression
-	ColumnNames     []string
+	Schema      string
+	TableName   string
+	Alias       string
+	Subquery    *SelectStatement
+	Natural     bool
+	Left        bool
+	Right       bool
+	Inner       bool
+	Cross       bool
+	On          *Expression
+	ColumnNames []string
 }

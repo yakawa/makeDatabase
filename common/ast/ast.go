@@ -5,8 +5,10 @@ type SQL struct {
 }
 
 type SelectStatement struct {
-	WithClause   *WithClause
-	SelectClause *SelectClause
-	OrderClause  *OrderClause
-	LimitClause  *LimitClause
+	WithClause      *WithClause
+	SelectClause    *SelectClause
+	ValuesClause    *ValuesClause
+	CompoundOpeator *CompoundOperator
+	OrderClause     *OrderClause
+	LimitClause     *LimitClause
 }

@@ -8,8 +8,6 @@ type SelectClause struct {
 	WhereClause       *WhereClause
 	GroupByExpression *GroupByExpression
 	WindowExpression  *WindowExpression
-	ValuesClause      *ValuesClause
-	CompoundOpeator   *CompoundOperator
 }
 
 type ResultColumn struct {
@@ -62,9 +60,9 @@ type FrameSpecification struct {
 }
 
 type CompoundOperator struct {
-	Union        bool
-	UnionAll     bool
-	Intersect    bool
-	Except       bool
-	SelectClause *SelectClause
+	Union           bool
+	UnionAll        bool
+	Intersect       bool
+	Except          bool
+	SelectStatement *SelectStatement
 }

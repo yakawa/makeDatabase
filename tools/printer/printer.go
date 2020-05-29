@@ -26,10 +26,19 @@ func printSelectStatement(ss *ast.SelectStatement, sp string) string {
 	}
 	if ss.SelectClause != nil {
 		out.WriteString(fmt.Sprintf("%sSELECT:\n", sp))
-		out.WriteString(fmt.Sprintf("%s", printSelectClause(ss.SelectClause, sp+" ")))
-		if ss.SelectClause.FromClause != nil {
-			out.WriteString(fmt.Sprintf("%sFROM:\n", sp))
-			out.WriteString(fmt.Sprintf("%s\n", printFromClause(ss.SelectClause.FromClause, sp+" ")))
+		if ss.SelectClause != nil {
+			out.WriteString(fmt.Sprintf("%s", printSelectClause(ss.SelectClause, sp+" ")))
+			if ss.SelectClause.FromClause != nil {
+				out.WriteString(fmt.Sprintf("%sFROM:\n", sp))
+				out.WriteString(fmt.Sprintf("%s\n", printFromClause(ss.SelectClause.FromClause, sp+" ")))
+			}
+		}
+	}
+	if ss.ValuesClause != nil {
+		out.WriteString(fmt.Sprintf("%sVALUES:\n", sp))
+		for _, v := range ss.ValuesClause.Expr {
+			out.WriteString(fmt.Sprintf("%s - Expression:\n", sp))
+			out.WriteString(fmt.Sprintf("%s", printExpression(&v, sp+"    ")))
 		}
 	}
 	return out.String()
@@ -428,49 +437,43 @@ func printFunctionExpression(f *ast.Function, sp string) string {
 
 func printFromClause(fr *ast.FromClause, sp string) string {
 	var out bytes.Buffer
-	if len(fr.ToS.Schema) != 0 {
-		out.WriteString(fmt.Sprintf("%sSchema: %s\n", sp, fr.ToS.Schema))
-	}
-	if len(fr.ToS.TableName) != 0 {
-		out.WriteString(fmt.Sprintf("%sTable: %s\n", sp, fr.ToS.TableName))
-	}
-	if len(fr.ToS.Alias) != 0 {
-		out.WriteString(fmt.Sprintf("%sAlias: %s\n", sp, fr.ToS.Alias))
-	}
-	if fr.ToS.JoinClause != nil {
-		out.WriteString(fmt.Sprintf("%sJOIN:\n", sp))
-		out.WriteString(fmt.Sprintf("%s", printJoin(fr.ToS.JoinClause, sp+" ")))
-	}
-	return out.String()
-}
+	if len(fr.ToS) != 0 {
+		for _, ts := range fr.ToS {
+			out.WriteString(fmt.Sprintf("%s- ToS:\n", sp))
+			if len(ts.Schema) != 0 {
+				out.WriteString(fmt.Sprintf("%s   Schema: %s\n", sp, ts.Schema))
+			}
+			if len(ts.TableName) != 0 {
+				out.WriteString(fmt.Sprintf("%s   Table: %s\n", sp, ts.TableName))
+			}
 
-func printJoin(j *ast.JoinClause, sp string) string {
-	var out bytes.Buffer
-	if j.Natural {
-		out.WriteString(fmt.Sprintf("%s- NATRUAL: true\n", sp))
-	} else {
-		out.WriteString(fmt.Sprintf("%s- NATURAL: false\n", sp))
-	}
-	if j.Left {
-		out.WriteString(fmt.Sprintf("%s  LEFT: true\n", sp))
-	} else {
-		out.WriteString(fmt.Sprintf("%s  LEFT: false\n", sp))
-	}
-	if j.Right {
-		out.WriteString(fmt.Sprintf("%s  RIGHT: true\n", sp))
-	} else {
-		out.WriteString(fmt.Sprintf("%s  RIGHT: false\n", sp))
-	}
-	if j.Inner {
-		out.WriteString(fmt.Sprintf("%s  INNER: true\n", sp))
-	} else {
-		out.WriteString(fmt.Sprintf("%s  INNER: false\n", sp))
-	}
-	if j.Cross {
-		out.WriteString(fmt.Sprintf("%s  CROSS: true\n", sp))
-	} else {
-		out.WriteString(fmt.Sprintf("%s  CROSS: false\n", sp))
-	}
+			if ts.Subquery != nil {
+				out.WriteString(fmt.Sprintf("%s   SubQuery:\n", sp))
+				out.WriteString(fmt.Sprintf("%s", printSelectStatement(ts.Subquery, sp+"    ")))
+			}
 
+			if len(ts.Alias) != 0 {
+				out.WriteString(fmt.Sprintf("%s   Alias: %s\n", sp, ts.Alias))
+			}
+
+			if ts.Natural {
+				out.WriteString(fmt.Sprintf("%s  NATRUAL: true\n", sp))
+			}
+			if ts.Left {
+				out.WriteString(fmt.Sprintf("%s  LEFT: true\n", sp))
+			}
+			if ts.Right {
+				out.WriteString(fmt.Sprintf("%s  RIGHT: true\n", sp))
+			}
+			if ts.Inner {
+				out.WriteString(fmt.Sprintf("%s  INNER: true\n", sp))
+			}
+			if ts.Cross {
+				out.WriteString(fmt.Sprintf("%s  CROSS: true\n", sp))
+			}
+			if len(ts.ColumnNames) != 0 {
+			}
+		}
+	}
 	return out.String()
 }

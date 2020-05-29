@@ -9,146 +9,121 @@ import (
 )
 
 func (p *parser) parseFrom() (fr *ast.FromClause, err error) {
-	logger.Tracef("Parse: FROM Clause")
+	logger.Tracef("Parse: FROM Clause %s", p.currentToken.Type.String())
 	defer logger.Tracef("Parse: FROM Clause End")
 
 	fr = &ast.FromClause{}
-	for {
-		ts, e := p.parseTableOrSubquery()
-		if e != nil {
-			return fr, e
+
+	for i := 0; ; i++ {
+		ts := &ast.TableOrSubquery{}
+
+		if p.currentToken.Type == token.K_NATURAL {
+			ts.Natural = true
+			p.readToken()
 		}
-		if p.currentToken.Type == token.COMMA || p.currentToken.Type == token.K_NATURAL || p.currentToken.Type == token.K_LEFT || p.currentToken.Type == token.K_INNER || p.currentToken.Type == token.K_CROSS || p.currentToken.Type == token.K_JOIN {
-			j, e := p.parseJoin()
-			if e != nil {
-				return fr, e
+		if p.currentToken.Type == token.K_LEFT || p.currentToken.Type == token.K_RIGHT || p.currentToken.Type == token.K_INNER || p.currentToken.Type == token.K_CROSS {
+			if p.currentToken.Type == token.K_LEFT || p.currentToken.Type == token.K_RIGHT {
+				if p.currentToken.Type == token.K_LEFT {
+					ts.Left = true
+				}
+				if p.currentToken.Type == token.K_RIGHT {
+					ts.Right = true
+				}
+				p.readToken()
+				if p.currentToken.Type == token.K_OUTER {
+					p.readToken()
+				}
 			}
-			ts.JoinClause = j
+			if p.currentToken.Type == token.K_INNER {
+				ts.Inner = true
+				p.readToken()
+			}
+			if p.currentToken.Type == token.K_CROSS {
+				ts.Cross = true
+				p.readToken()
+			}
 		}
-		fr.ToS = ts
-		break
+
+		if i != 0 {
+			if ts.Natural == false && ts.Left == false && ts.Right == false && ts.Inner == false && ts.Cross == false {
+				ts.Cross = true
+			}
+		}
+
+		tos, er := p.parseToS()
+		if er != nil {
+			return fr, er
+		}
+		ts.Schema = tos.Schema
+		ts.TableName = tos.TableName
+		ts.Subquery = tos.Subquery
+
+		if p.peekToken().Type == token.K_ON || p.peekToken().Type == token.K_USING {
+			p.readToken()
+			if p.currentToken.Type == token.K_ON {
+				p.readToken()
+				ex, er := p.parseExpression()
+				if er != nil {
+					return fr, er
+				}
+				ts.On = ex
+			}
+			if p.currentToken.Type == token.K_USING {
+				p.readToken()
+				p.readToken()
+				for {
+					ts.ColumnNames = append(ts.ColumnNames, p.currentToken.Literal)
+					p.readToken()
+					if p.currentToken.Type != token.COMMA {
+						break
+					}
+					p.readToken()
+				}
+			}
+		}
+
+		fr.ToS = append(fr.ToS, *ts)
+		if p.peekToken().Type != token.COMMA {
+			break
+		}
+		p.readToken()
+		p.readToken()
 	}
 	return
 }
 
-func (p *parser) parseTableOrSubquery() (ts *ast.TableOrSubquery, err error) {
-	logger.Tracef("Parse: Table OR Subquery")
-	defer logger.Tracef("Parse: Table OR Subquery End")
+func (p *parser) parseToS() (ts *ast.TableOrSubquery, err error) {
+	logger.Tracef("Parse: ToS")
+	defer logger.Tracef("Parse: ToS End")
 
 	ts = &ast.TableOrSubquery{}
+
 	if p.currentToken.Type == token.LEFTPAREN {
 		p.readToken()
 		if p.currentToken.Type == token.K_WITH || p.currentToken.Type == token.K_SELECT || p.currentToken.Type == token.K_VALUES {
-			ss, e := p.parseSelectStatement()
-			if e != nil {
-				return ts, e
+			ss, er := p.parseSelectStatement()
+			if er != nil {
+				return ts, er
 			}
-			ts.SelectStatement = ss
-			if p.currentToken.Type != token.RIGHTPAREN {
-				return ts, errors.New("Parse Error: Invalid Token")
-			}
-			p.readToken()
-			if p.currentToken.Type == token.K_AS {
-				p.readToken()
-				if p.currentToken.Type != token.IDENT {
-					return ts, errors.New("Parse Error: Invalid Token")
-				}
-				ts.Alias = p.currentToken.Literal
-			} else if p.currentToken.Type == token.IDENT {
-				ts.Alias = p.currentToken.Literal
-			}
+			ts.Subquery = ss
 		} else {
-			var j *ast.JoinClause
-			ts2, e := p.parseTableOrSubquery()
-			if e != nil {
-				return ts, e
+			tos, er := p.parseToS()
+			if er != nil {
+				return ts, er
 			}
-			ts.TableOrSubquery = ts2
-			if p.currentToken.Type == token.COMMA || p.currentToken.Type == token.K_NATURAL || p.currentToken.Type == token.K_LEFT || p.currentToken.Type == token.K_INNER || p.currentToken.Type == token.K_CROSS || p.currentToken.Type == token.K_JOIN {
-				j, e = p.parseJoin()
-				if e != nil {
-					return ts, e
-				}
-				ts.JoinClause = j
-			}
+			ts = tos
+		}
+		p.readToken()
+		if p.currentToken.Type != token.RIGHTPAREN {
+			return ts, errors.New("Parse Error Invalid Token")
 		}
 	} else {
-		if p.currentToken.Type != token.IDENT {
-			return ts, errors.New("Parse Error: Invalid Token")
-		}
 		if p.peekToken().Type == token.PERIOD {
 			ts.Schema = p.currentToken.Literal
 			p.readToken()
 			p.readToken()
 		}
 		ts.TableName = p.currentToken.Literal
-		p.readToken()
-		if p.currentToken.Type == token.K_AS {
-			p.readToken()
-			if p.currentToken.Type != token.IDENT {
-				return ts, errors.New("Parse Error: Invalid Token")
-			}
-			ts.Alias = p.currentToken.Literal
-		} else if p.currentToken.Type == token.IDENT {
-			ts.Alias = p.currentToken.Literal
-		}
-	}
-	return
-}
-
-func (p *parser) parseJoin() (j *ast.JoinClause, err error) {
-	logger.Tracef("Parse: JOIN")
-	defer logger.Tracef("Parse: JOIN End")
-
-	j = &ast.JoinClause{}
-	if p.currentToken.Type == token.COMMA {
-		j.Cross = true
-		p.readToken()
-	} else {
-		if p.currentToken.Type == token.K_NATURAL {
-			j.Natural = true
-			p.readToken()
-		}
-		if p.currentToken.Type == token.K_LEFT {
-			j.Left = true
-			p.readToken()
-			if p.currentToken.Type == token.K_OUTER {
-				p.readToken()
-			}
-		} else if p.currentToken.Type == token.K_INNER {
-			j.Inner = true
-			p.readToken()
-		} else if p.currentToken.Type == token.K_CROSS {
-			j.Cross = true
-			p.readToken()
-		}
-		p.readToken()
-	}
-	ss3, e := p.parseTableOrSubquery()
-	if e != nil {
-		return j, e
-	}
-	j.TableOrSubquery = ss3
-	if p.currentToken.Type == token.K_ON {
-		exp, e := p.parseExpression()
-		if e != nil {
-			return j, e
-		}
-		j.Expr = exp
-	} else if p.currentToken.Type == token.K_USING {
-		p.readToken()
-		if p.currentToken.Type != token.LEFTPAREN {
-			return j, errors.New("Parse Error: Invalid Token")
-		}
-		p.readToken()
-		for {
-			j.ColumnNames = append(j.ColumnNames, p.currentToken.Literal)
-			p.readToken()
-			if p.currentToken.Type != token.COMMA {
-				break
-			}
-			p.readToken()
-		}
 	}
 	return
 }
