@@ -99,6 +99,7 @@ const (
 	K_NULLS
 	K_OFFSET
 	K_ON
+	K_OR
 	K_ORDER
 	K_OTHERS
 	K_OUTER
@@ -243,6 +244,8 @@ func LookupKeyword(k string) Type {
 		return K_OFFSET
 	case "ON":
 		return K_ON
+	case "OR":
+		return K_OR
 	case "ORDER":
 		return K_ORDER
 	case "OTHERS":

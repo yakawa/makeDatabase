@@ -44,7 +44,7 @@ var precedences = map[token.Type]int{
 	token.EQUALS:    EQUALS,
 	token.NOTEQUALS: EQUALS,
 	token.K_COLLATE: EQUALS,
-	token.K_NOT:     EQUALS,
+	token.K_NOT:     LOGICAL_NOT,
 	token.K_LIKE:    EQUALS,
 	token.K_REGEXP:  EQUALS,
 	token.K_GLOB:    EQUALS,
@@ -54,6 +54,8 @@ var precedences = map[token.Type]int{
 	token.K_IS:      EQUALS,
 	token.K_BETWEEN: EQUALS,
 	token.K_IN:      EQUALS,
+	token.K_AND:     LOGICAL_AND,
+	token.K_OR:      LOGICAL_AND,
 }
 
 // Parse
@@ -86,6 +88,7 @@ func new(tokens []token.Token) *parser {
 	p.unaryParseFunction[token.K_NOT] = p.parseExistsExpr
 	p.unaryParseFunction[token.K_EXISTS] = p.parseExistsExpr
 	p.unaryParseFunction[token.K_CASE] = p.parseCaseExpr
+	p.unaryParseFunction[token.K_NOT] = p.parsePrefixExpr
 
 	p.binaryParseFunction[token.PLUSSIGN] = p.parseBinaryExpr
 	p.binaryParseFunction[token.MINUSSIGN] = p.parseBinaryExpr
@@ -94,6 +97,8 @@ func new(tokens []token.Token) *parser {
 	p.binaryParseFunction[token.CONCAT] = p.parseBinaryExpr
 	p.binaryParseFunction[token.EQUALS] = p.parseBinaryExpr
 	p.binaryParseFunction[token.NOTEQUALS] = p.parseBinaryExpr
+	p.binaryParseFunction[token.K_AND] = p.parseBinaryExpr
+	p.binaryParseFunction[token.K_OR] = p.parseBinaryExpr
 	p.binaryParseFunction[token.K_COLLATE] = p.parseCollateExpr
 	p.binaryParseFunction[token.K_LIKE] = p.parseStringFunc
 	p.binaryParseFunction[token.K_GLOB] = p.parseStringFunc

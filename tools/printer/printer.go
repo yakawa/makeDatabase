@@ -95,6 +95,14 @@ func printOperator(t token.Type) string {
 		return "="
 	case token.NOTEQUALS:
 		return "<>"
+	case token.K_AND:
+		return "AND"
+	case token.K_OR:
+		return "OR"
+	case token.K_NOT:
+		return "NOT"
+	case token.CONCAT:
+		return "||"
 	default:
 		return "Unknown"
 	}
