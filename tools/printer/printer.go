@@ -23,6 +23,21 @@ func printSelectStatement(ss *ast.SelectStatement, sp string) string {
 	var out bytes.Buffer
 	if ss.WithClause != nil {
 		out.WriteString(fmt.Sprintf("%sWITH:\n", sp))
+		if ss.WithClause.IsRecursive {
+			out.WriteString(fmt.Sprintf("%s Recursive: true\n", sp))
+		}
+		out.WriteString(fmt.Sprintf("%s CTEs:\n", sp))
+		for _, cte := range ss.WithClause.CTE {
+			out.WriteString(fmt.Sprintf("%s  - CTE:\n", sp))
+			out.WriteString(fmt.Sprintf("%s     Name: %s\n", sp, cte.TableName))
+			if len(cte.ColumnNames) != 0 {
+				out.WriteString(fmt.Sprintf("%s     Columns:\n", sp))
+				for _, c := range cte.ColumnNames {
+					out.WriteString(fmt.Sprintf("%s      - %s\n", sp, c))
+				}
+			}
+			out.WriteString(fmt.Sprintf("%s", printSelectStatement(cte.SelectStatement, sp+"     ")))
+		}
 	}
 	if ss.SelectClause != nil {
 		out.WriteString(fmt.Sprintf("%sSELECT:\n", sp))
@@ -30,7 +45,24 @@ func printSelectStatement(ss *ast.SelectStatement, sp string) string {
 			out.WriteString(fmt.Sprintf("%s", printSelectClause(ss.SelectClause, sp+" ")))
 			if ss.SelectClause.FromClause != nil {
 				out.WriteString(fmt.Sprintf("%sFROM:\n", sp))
-				out.WriteString(fmt.Sprintf("%s\n", printFromClause(ss.SelectClause.FromClause, sp+" ")))
+				out.WriteString(fmt.Sprintf("%s", printFromClause(ss.SelectClause.FromClause, sp+" ")))
+			}
+			if ss.SelectClause.WhereClause != nil {
+				out.WriteString(fmt.Sprintf("%sWHERE:\n", sp))
+				out.WriteString(fmt.Sprintf("%s", printExpression(ss.SelectClause.WhereClause.Expr, sp+" ")))
+			}
+			if ss.SelectClause.GroupByExpression != nil {
+				out.WriteString(fmt.Sprintf("%sGROUPBy:\n", sp))
+				out.WriteString(fmt.Sprintf("%s Grouping:\n", sp))
+				for _, e := range ss.SelectClause.GroupByExpression.GroupingExpr {
+					out.WriteString(fmt.Sprintf("%s  - Expression:\n", sp))
+					out.WriteString(fmt.Sprintf("%s", printExpression(&e, sp+"     ")))
+				}
+				if ss.SelectClause.GroupByExpression.HavingExpr != nil {
+					out.WriteString(fmt.Sprintf("%s Condition:\n", sp))
+					out.WriteString(fmt.Sprintf("%s  - Expression:\n", sp))
+					out.WriteString(fmt.Sprintf("%s", printExpression(ss.SelectClause.GroupByExpression.HavingExpr, sp+"     ")))
+				}
 			}
 		}
 	}
@@ -101,7 +133,7 @@ func printOperator(t token.Type) string {
 	case token.SOLIDAS:
 		return "/"
 	case token.EQUALS:
-		return "="
+		return "\"=\""
 	case token.NOTEQUALS:
 		return "<>"
 	case token.K_AND:
@@ -112,6 +144,14 @@ func printOperator(t token.Type) string {
 		return "NOT"
 	case token.CONCAT:
 		return "||"
+	case token.LESSTHAN:
+		return "\"<\""
+	case token.LESSTHANEQUALS:
+		return "\"<=\""
+	case token.GREATERTHAN:
+		return "\">\""
+	case token.GREATERTHANEQUALS:
+		return "\">=\""
 	default:
 		return "Unknown"
 	}
@@ -457,21 +497,31 @@ func printFromClause(fr *ast.FromClause, sp string) string {
 			}
 
 			if ts.Natural {
-				out.WriteString(fmt.Sprintf("%s  NATRUAL: true\n", sp))
+				out.WriteString(fmt.Sprintf("%s   JOIN: Natural\n", sp))
 			}
 			if ts.Left {
-				out.WriteString(fmt.Sprintf("%s  LEFT: true\n", sp))
+				out.WriteString(fmt.Sprintf("%s   JOIN: Left\n", sp))
 			}
 			if ts.Right {
-				out.WriteString(fmt.Sprintf("%s  RIGHT: true\n", sp))
+				out.WriteString(fmt.Sprintf("%s   JOIN: Right\n", sp))
 			}
 			if ts.Inner {
-				out.WriteString(fmt.Sprintf("%s  INNER: true\n", sp))
+				out.WriteString(fmt.Sprintf("%s   JOIN: Inner\n", sp))
 			}
 			if ts.Cross {
-				out.WriteString(fmt.Sprintf("%s  CROSS: true\n", sp))
+				out.WriteString(fmt.Sprintf("%s   JOIN: Cross\n", sp))
 			}
+
+			if ts.On != nil {
+				out.WriteString(fmt.Sprintf("%s   OnExpr:\n", sp))
+				out.WriteString(fmt.Sprintf("%s", printExpression(ts.On, sp+"    ")))
+			}
+
 			if len(ts.ColumnNames) != 0 {
+				out.WriteString(fmt.Sprintf("%s   Using:\n", sp))
+				for _, c := range ts.ColumnNames {
+					out.WriteString(fmt.Sprintf("%s    - column: %s\n", sp, c))
+				}
 			}
 		}
 	}

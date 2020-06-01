@@ -7,7 +7,7 @@ type SelectClause struct {
 	FromClause        *FromClause
 	WhereClause       *WhereClause
 	GroupByExpression *GroupByExpression
-	WindowExpression  *WindowExpression
+	WindowExpression  []WindowExpression
 }
 
 type ResultColumn struct {
@@ -24,13 +24,14 @@ type GroupByExpression struct {
 }
 
 type WindowExpression struct {
-	WindowDefn []WindowDefinition
+	Name string
+	Defn *WindowDefinition
 }
 
 type WindowDefinition struct {
 	WindowName    string
 	PartitionExpr []Expression
-	GroupExpr     []Expression
+	OrderExpr     []OrderClause
 	Frame         *FrameSpecification
 }
 

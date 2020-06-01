@@ -9,7 +9,7 @@ import (
 )
 
 func (p *parser) parseFrom() (fr *ast.FromClause, err error) {
-	logger.Tracef("Parse: FROM Clause %s", p.currentToken.Type.String())
+	logger.Tracef("Parse: FROM Clause")
 	defer logger.Tracef("Parse: FROM Clause End")
 
 	fr = &ast.FromClause{}
@@ -47,6 +47,11 @@ func (p *parser) parseFrom() (fr *ast.FromClause, err error) {
 		if i != 0 {
 			if ts.Natural == false && ts.Left == false && ts.Right == false && ts.Inner == false && ts.Cross == false {
 				ts.Cross = true
+			} else {
+				if p.currentToken.Type != token.K_JOIN {
+					return fr, errors.New("Parse Error Invalid Token")
+				}
+				p.readToken()
 			}
 		}
 
@@ -57,6 +62,14 @@ func (p *parser) parseFrom() (fr *ast.FromClause, err error) {
 		ts.Schema = tos.Schema
 		ts.TableName = tos.TableName
 		ts.Subquery = tos.Subquery
+
+		if p.peekToken().Type == token.K_AS {
+			p.readToken()
+		}
+		if p.peekToken().Type == token.IDENT {
+			p.readToken()
+			ts.Alias = p.currentToken.Literal
+		}
 
 		if p.peekToken().Type == token.K_ON || p.peekToken().Type == token.K_USING {
 			p.readToken()
@@ -83,11 +96,16 @@ func (p *parser) parseFrom() (fr *ast.FromClause, err error) {
 		}
 
 		fr.ToS = append(fr.ToS, *ts)
-		if p.peekToken().Type != token.COMMA {
+
+		if p.peekToken().Type != token.COMMA && !(p.peekToken().Type == token.K_LEFT || p.peekToken().Type == token.K_RIGHT || p.peekToken().Type == token.K_INNER || p.peekToken().Type == token.K_CROSS) {
+
 			break
 		}
 		p.readToken()
-		p.readToken()
+
+		if p.currentToken.Type == token.COMMA {
+			p.readToken()
+		}
 	}
 	return
 }

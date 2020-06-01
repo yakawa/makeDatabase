@@ -28,7 +28,6 @@ func (p *parser) parseSelectClause() (sc *ast.SelectClause, err error) {
 			if e != nil {
 				return sc, e
 			}
-			//logger.Infof("%#+v", p.currentToken)
 			sc.ResultColumns = append(sc.ResultColumns, r)
 			if p.currentToken.Type != token.COMMA {
 				break
@@ -40,17 +39,33 @@ func (p *parser) parseSelectClause() (sc *ast.SelectClause, err error) {
 		}
 		if p.currentToken.Type == token.K_FROM {
 			p.readToken()
+
 			f, e := p.parseFrom()
 			if e != nil {
 				return sc, e
 			}
 			sc.FromClause = f
+			p.readToken()
 		}
 		if p.currentToken.Type == token.K_WHERE {
-			//p.parseWhere()
+			p.readToken()
+			w, e := p.parseWhere()
+			if e != nil {
+				return sc, e
+			}
+			sc.WhereClause = w
 		}
 		if p.currentToken.Type == token.K_GROUP {
-			//p.parseGroupBy()
+			p.readToken()
+			if p.currentToken.Type != token.K_BY {
+				return sc, errors.New("Parse Error Invalid Token")
+			}
+			p.readToken()
+			g, e := p.parseGroupBy()
+			if e != nil {
+				return sc, e
+			}
+			sc.GroupByExpression = g
 		}
 		if p.currentToken.Type == token.K_WINDOW {
 			//p.parseWindow()

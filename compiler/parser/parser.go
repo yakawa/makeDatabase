@@ -36,26 +36,30 @@ const (
 )
 
 var precedences = map[token.Type]int{
-	token.ASTERISK:  PRODUCT,
-	token.SOLIDAS:   PRODUCT,
-	token.PLUSSIGN:  SUM,
-	token.MINUSSIGN: SUM,
-	token.CONCAT:    SUM,
-	token.EQUALS:    EQUALS,
-	token.NOTEQUALS: EQUALS,
-	token.K_COLLATE: EQUALS,
-	token.K_NOT:     LOGICAL_NOT,
-	token.K_LIKE:    EQUALS,
-	token.K_REGEXP:  EQUALS,
-	token.K_GLOB:    EQUALS,
-	token.K_MATCH:   EQUALS,
-	token.K_ISNULL:  EQUALS,
-	token.K_NOTNULL: EQUALS,
-	token.K_IS:      EQUALS,
-	token.K_BETWEEN: EQUALS,
-	token.K_IN:      EQUALS,
-	token.K_AND:     LOGICAL_AND,
-	token.K_OR:      LOGICAL_AND,
+	token.ASTERISK:          PRODUCT,
+	token.SOLIDAS:           PRODUCT,
+	token.PLUSSIGN:          SUM,
+	token.MINUSSIGN:         SUM,
+	token.CONCAT:            SUM,
+	token.EQUALS:            EQUALS,
+	token.NOTEQUALS:         EQUALS,
+	token.K_COLLATE:         EQUALS,
+	token.K_NOT:             LOGICAL_NOT,
+	token.K_LIKE:            EQUALS,
+	token.K_REGEXP:          EQUALS,
+	token.K_GLOB:            EQUALS,
+	token.K_MATCH:           EQUALS,
+	token.K_ISNULL:          EQUALS,
+	token.K_NOTNULL:         EQUALS,
+	token.K_IS:              EQUALS,
+	token.K_BETWEEN:         EQUALS,
+	token.K_IN:              EQUALS,
+	token.K_AND:             LOGICAL_AND,
+	token.K_OR:              LOGICAL_AND,
+	token.LESSTHAN:          LESSGREATER,
+	token.LESSTHANEQUALS:    LESSGREATER,
+	token.GREATERTHAN:       LESSGREATER,
+	token.GREATERTHANEQUALS: LESSGREATER,
 }
 
 // Parse
@@ -99,6 +103,10 @@ func new(tokens []token.Token) *parser {
 	p.binaryParseFunction[token.NOTEQUALS] = p.parseBinaryExpr
 	p.binaryParseFunction[token.K_AND] = p.parseBinaryExpr
 	p.binaryParseFunction[token.K_OR] = p.parseBinaryExpr
+	p.binaryParseFunction[token.LESSTHAN] = p.parseBinaryExpr
+	p.binaryParseFunction[token.LESSTHANEQUALS] = p.parseBinaryExpr
+	p.binaryParseFunction[token.GREATERTHAN] = p.parseBinaryExpr
+	p.binaryParseFunction[token.GREATERTHANEQUALS] = p.parseBinaryExpr
 	p.binaryParseFunction[token.K_COLLATE] = p.parseCollateExpr
 	p.binaryParseFunction[token.K_LIKE] = p.parseStringFunc
 	p.binaryParseFunction[token.K_GLOB] = p.parseStringFunc
@@ -131,11 +139,11 @@ func (p *parser) parse() (a *ast.SQL, err error) {
 				return a, err
 			}
 			a.SelectStatement = ss
+			logger.Infof("SS: %#+v, %#+v", p.currentToken, p.peekToken())
 		default:
 			err = errors.New("Parse Error: Unknown Token")
 			return
 		}
-		p.readToken()
 	}
 	return
 }
@@ -145,51 +153,52 @@ func (p *parser) parseSelectStatement() (ss *ast.SelectStatement, err error) {
 	defer logger.Tracef("Parse: SELECT Statement End")
 
 	ss = &ast.SelectStatement{}
-	switch p.currentToken.Type {
-	case token.K_WITH:
-		wc, e := p.parseWithClause()
-		if e != nil {
-			return ss, e
+	for {
+		switch p.currentToken.Type {
+		case token.EOS, token.SEMICOLON:
+			return
+		case token.K_WITH:
+			wc, e := p.parseWithClause()
+			if e != nil {
+				return ss, e
+			}
+			ss.WithClause = wc
+		case token.K_SELECT:
+			sc, e := p.parseSelectClause()
+			if e != nil {
+				return ss, e
+			}
+			ss.SelectClause = sc
+		case token.K_VALUES:
+			vl, e := p.parseValuesClause()
+			if e != nil {
+				return ss, e
+			}
+			ss.ValuesClause = vl
+		case token.K_UNION, token.K_INTERSECT, token.K_EXCEPT:
+			cm := &ast.CompoundOperator{}
+			if p.currentToken.Type == token.K_UNION && p.peekToken().Type == token.K_ALL {
+				cm.UnionAll = true
+			} else if p.currentToken.Type == token.K_UNION && p.peekToken().Type != token.K_ALL {
+				cm.Union = true
+			} else if p.currentToken.Type == token.K_INTERSECT {
+				cm.Intersect = true
+			} else {
+				cm.Except = true
+			}
+			p.readToken()
+			sc2, e := p.parseSelectStatement()
+			if e != nil {
+				return ss, e
+			}
+			cm.SelectStatement = sc2
+			ss.CompoundOpeator = cm
+		case token.K_ORDER:
+		case token.K_LIMIT:
+		default:
+			return
 		}
-		ss.WithClause = wc
-	case token.K_SELECT:
-		sc, e := p.parseSelectClause()
-		if e != nil {
-			return ss, e
-		}
-		ss.SelectClause = sc
-	case token.K_VALUES:
-		vl, e := p.parseValuesClause()
-		if e != nil {
-			return ss, e
-		}
-		ss.ValuesClause = vl
-	case token.K_UNION, token.K_INTERSECT, token.K_EXCEPT:
-		cm := &ast.CompoundOperator{}
-		if p.currentToken.Type == token.K_UNION && p.peekToken().Type == token.K_ALL {
-			cm.UnionAll = true
-		} else if p.currentToken.Type == token.K_UNION && p.peekToken().Type != token.K_ALL {
-			cm.Union = true
-		} else if p.currentToken.Type == token.K_INTERSECT {
-			cm.Intersect = true
-		} else {
-			cm.Except = true
-		}
-		p.readToken()
-		sc2, e := p.parseSelectStatement()
-		if e != nil {
-			return ss, e
-		}
-		cm.SelectStatement = sc2
-		ss.CompoundOpeator = cm
-
-	case token.K_ORDER:
-	case token.K_LIMIT:
-	default:
-		err = errors.New("Parse Error Invalid Token")
-		return
 	}
-	return
 }
 
 func (p *parser) readToken() {

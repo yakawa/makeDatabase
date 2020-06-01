@@ -19,7 +19,7 @@ func (p *parser) parseWithClause() (wc *ast.WithClause, err error) {
 		p.readToken()
 	}
 	for {
-		switch p.peekToken().Type {
+		switch p.currentToken.Type {
 		case token.EOS, token.SEMICOLON:
 			err = errors.New("Parse Error Unexpected Terminate")
 			return
@@ -32,7 +32,6 @@ func (p *parser) parseWithClause() (wc *ast.WithClause, err error) {
 					return wc, e
 				}
 				wc.CTE = append(wc.CTE, cte)
-				p.readToken()
 				if p.currentToken.Type != token.COMMA {
 					break
 				}
