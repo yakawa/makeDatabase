@@ -12,7 +12,7 @@ run:
 
 build:
 	go generate ./...
-	go build
+	go build -trimpath
 
 cover:
 	go test -coverprofile=cover.out ./...

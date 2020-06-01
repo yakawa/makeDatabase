@@ -1,16 +1,17 @@
 package parser
 
 import (
-	"errors"
-
 	"github.com/yakawa/makeDatabase/common/ast"
+	"github.com/yakawa/makeDatabase/common/errors"
 	"github.com/yakawa/makeDatabase/common/token"
 	"github.com/yakawa/makeDatabase/logger"
 )
 
 func (p *parser) parseFrom() (fr *ast.FromClause, err error) {
-	logger.Tracef("Parse: FROM Clause")
+	logger.Tracef("Parse: FROM Clause %#+v", p.currentToken)
 	defer logger.Tracef("Parse: FROM Clause End")
+
+	p.readToken()
 
 	fr = &ast.FromClause{}
 
@@ -49,7 +50,7 @@ func (p *parser) parseFrom() (fr *ast.FromClause, err error) {
 				ts.Cross = true
 			} else {
 				if p.currentToken.Type != token.K_JOIN {
-					return fr, errors.New("Parse Error Invalid Token")
+					return fr, errors.NewErrParseInvalidToken(p.currentToken)
 				}
 				p.readToken()
 			}
@@ -133,7 +134,7 @@ func (p *parser) parseToS() (ts *ast.TableOrSubquery, err error) {
 		}
 		p.readToken()
 		if p.currentToken.Type != token.RIGHTPAREN {
-			return ts, errors.New("Parse Error Invalid Token")
+			return ts, errors.NewErrParseInvalidToken(p.currentToken)
 		}
 	} else {
 		if p.peekToken().Type == token.PERIOD {

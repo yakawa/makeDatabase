@@ -1,9 +1,8 @@
 package parser
 
 import (
-	"errors"
-
 	"github.com/yakawa/makeDatabase/common/ast"
+	"github.com/yakawa/makeDatabase/common/errors"
 	"github.com/yakawa/makeDatabase/common/token"
 	"github.com/yakawa/makeDatabase/logger"
 )
@@ -29,17 +28,19 @@ func (p *parser) parseSelectClause() (sc *ast.SelectClause, err error) {
 				return sc, e
 			}
 			sc.ResultColumns = append(sc.ResultColumns, r)
+
+			p.readToken()
+
 			if p.currentToken.Type != token.COMMA {
 				break
 			}
 			p.readToken()
 		}
+
 		if p.currentToken.Type == token.EOS || p.currentToken.Type == token.SEMICOLON {
 			return
 		}
 		if p.currentToken.Type == token.K_FROM {
-			p.readToken()
-
 			f, e := p.parseFrom()
 			if e != nil {
 				return sc, e
@@ -58,7 +59,7 @@ func (p *parser) parseSelectClause() (sc *ast.SelectClause, err error) {
 		if p.currentToken.Type == token.K_GROUP {
 			p.readToken()
 			if p.currentToken.Type != token.K_BY {
-				return sc, errors.New("Parse Error Invalid Token")
+				return sc, errors.NewErrParseInvalidToken(p.currentToken)
 			}
 			p.readToken()
 			g, e := p.parseGroupBy()
@@ -82,17 +83,14 @@ func (p *parser) parseResultColumn() (rc ast.ResultColumn, err error) {
 
 	if p.currentToken.Type == token.ASTERISK {
 		rc.Asterisk = true
-		p.readToken()
 		return
 	} else if p.currentToken.Type == token.IDENT && p.peekToken().Type == token.PERIOD {
 		tmp := p.currentToken
 		p.readToken()
 		p.readToken()
 		if p.currentToken.Type == token.ASTERISK {
-			rc.Asterisk = true
 			rc.TableName = tmp.Literal
 			rc.Asterisk = true
-			p.readToken()
 			return
 		} else if p.currentToken.Type == token.IDENT {
 			if p.peekToken().Type == token.PERIOD {
@@ -104,7 +102,6 @@ func (p *parser) parseResultColumn() (rc ast.ResultColumn, err error) {
 					rc.SchemaName = schema
 					rc.TableName = table
 					rc.Asterisk = true
-					p.readToken()
 					return
 				} else if p.currentToken.Type == token.IDENT {
 					p.rewindToken()
@@ -128,13 +125,11 @@ func (p *parser) parseResultColumn() (rc ast.ResultColumn, err error) {
 	if p.currentToken.Type == token.K_AS {
 		p.readToken()
 		if p.currentToken.Type != token.IDENT {
-			return rc, errors.New("Parse Error: Invalid Token")
+			return rc, errors.NewErrParseInvalidToken(p.currentToken)
 		}
 		rc.Alias = p.currentToken.Literal
-		p.readToken()
 	} else if p.currentToken.Type == token.IDENT {
 		rc.Alias = p.currentToken.Literal
-		p.readToken()
 	}
 	return
 }

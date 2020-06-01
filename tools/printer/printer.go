@@ -527,3 +527,48 @@ func printFromClause(fr *ast.FromClause, sp string) string {
 	}
 	return out.String()
 }
+
+func printWindowClause(w *ast.WindowExpression, sp string) string {
+	var out bytes.Buffer
+	out.WriteString(fmt.Sprintf("%sWindow:\n", sp))
+	out.WriteString(fmt.Sprintf("%s Definition:\n", sp))
+	for _, d := range w.Defn {
+		out.WriteString(fmt.Sprintf("%s  - Function:\n", sp))
+		out.WriteString(fmt.Sprintf("%s     Name: %s\n", sp, d.Name))
+		if len(d.BaseWindowName) != 0 {
+			out.WriteString(fmt.Sprintf("%s     BaseWindowName: %s\n", sp, d.BaseWindowName))
+		}
+		if len(d.PartitionExpr) != 0 {
+			out.WriteString(fmt.Sprintf("%s     Partition:\n", sp))
+			for _, p := range d.PartitionExpr {
+				out.WriteString(fmt.Sprintf("%s       - Expression:\n", sp))
+				out.WriteString(fmt.Sprintf("%s", printExpression(&p, sp+"       ")))
+			}
+		}
+
+		if len(d.OrderExpr) != 0 {
+			out.WriteString(fmt.Sprintf("%s     OrderBy:\n", sp))
+			for _, o := range d.OrderExpr {
+				out.WriteString(fmt.Sprintf("%s       - Order:\n", sp))
+				out.WriteString(fmt.Sprintf("%s          Expression:\n", sp))
+				out.WriteString(fmt.Sprintf("%s", printExpression(o.Expr, sp+"          ")))
+				if len(o.CollateName) != 0 {
+					out.WriteString(fmt.Sprintf("%s        Collation: %s\n", sp, o.CollateName))
+				}
+				if o.Asc {
+					out.WriteString(fmt.Sprintf("%s        ASC: true\n", sp))
+				}
+				if o.Desc {
+					out.WriteString(fmt.Sprintf("%s        DESC: true\n", sp))
+				}
+				if o.NullsFirst {
+					out.WriteString(fmt.Sprintf("%s        NULLSFirst: true\n", sp))
+				}
+				if o.NullsLast {
+					out.WriteString(fmt.Sprintf("%s        NULLSLast: true\n", sp))
+				}
+			}
+		}
+	}
+	return out.String()
+}

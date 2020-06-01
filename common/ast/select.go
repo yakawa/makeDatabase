@@ -24,15 +24,15 @@ type GroupByExpression struct {
 }
 
 type WindowExpression struct {
-	Name string
-	Defn *WindowDefinition
+	Defn []WindowDefinition
 }
 
 type WindowDefinition struct {
-	WindowName    string
-	PartitionExpr []Expression
-	OrderExpr     []OrderClause
-	Frame         *FrameSpecification
+	Name           string
+	BaseWindowName string
+	PartitionExpr  []Expression
+	OrderExpr      []OrderClause
+	Frame          *FrameSpecification
 }
 
 type FrameSpecification struct {

@@ -331,7 +331,7 @@ func TestExpression(t *testing.T) {
         Filter:
          - Expression:
             BinaryOpe:
-             Operator: =
+             Operator: "="
              Ope1:
               Column: c2
              Ope2:
@@ -354,6 +354,45 @@ func TestExpression(t *testing.T) {
           ExprPreceding2:
            Column: c4
           ExcludeCurrentRow: true
+`),
+		},
+		{"SELECT (c1, c2, c3);",
+			string(`SQL:
+ SELECTStatement:
+  SELECT:
+   ResultColumns:
+    - Expression:
+       ExpressionGroup:
+        - Expression:
+           Column: c1
+        - Expression:
+           Column: c2
+        - Expression:
+           Column: c3
+`),
+		},
+		{"SELECT CAST (1 AS INTEGER);",
+			string(`SQL:
+ SELECTStatement:
+  SELECT:
+   ResultColumns:
+    - Expression:
+       Cast:
+        Type: INTEGER
+        Expression:
+         Number: 1
+`),
+		},
+		{"SELECT c1 COLLATE utf8mb4;",
+			string(`SQL:
+ SELECTStatement:
+  SELECT:
+   ResultColumns:
+    - Expression:
+       Collate:
+        Name: utf8mb4
+        Expression:
+         Column: c1
 `),
 		},
 	}

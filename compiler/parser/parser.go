@@ -1,9 +1,8 @@
 package parser
 
 import (
-	"errors"
-
 	"github.com/yakawa/makeDatabase/common/ast"
+	"github.com/yakawa/makeDatabase/common/errors"
 	"github.com/yakawa/makeDatabase/common/token"
 	"github.com/yakawa/makeDatabase/logger"
 )
@@ -139,10 +138,10 @@ func (p *parser) parse() (a *ast.SQL, err error) {
 				return a, err
 			}
 			a.SelectStatement = ss
+			p.readToken()
 			logger.Infof("SS: %#+v, %#+v", p.currentToken, p.peekToken())
 		default:
-			err = errors.New("Parse Error: Unknown Token")
-			return
+			return a, errors.NewErrParseInvalidToken(p.currentToken)
 		}
 	}
 	return

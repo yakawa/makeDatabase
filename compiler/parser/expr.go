@@ -1,10 +1,10 @@
 package parser
 
 import (
-	"errors"
 	"strconv"
 
 	"github.com/yakawa/makeDatabase/common/ast"
+	"github.com/yakawa/makeDatabase/common/errors"
 	"github.com/yakawa/makeDatabase/common/token"
 	"github.com/yakawa/makeDatabase/logger"
 )
@@ -243,18 +243,18 @@ func (p *parser) parseFunctionExpr() (expr *ast.Expression, err error) {
 		}
 	}
 	if p.currentToken.Type != token.RIGHTPAREN {
-		return expr, errors.New("Parse Error Invalid Token")
+		return expr, errors.NewErrParseInvalidToken(p.currentToken)
 	}
 
 	if p.peekToken().Type == token.K_FILTER {
 		p.readToken()
 		p.readToken()
 		if p.currentToken.Type != token.LEFTPAREN {
-			return expr, errors.New("Parse Error Invalid Token")
+			return expr, errors.NewErrParseInvalidToken(p.currentToken)
 		}
 		p.readToken()
 		if p.currentToken.Type != token.K_WHERE {
-			return expr, errors.New("Parse Error Invalid Token")
+			return expr, errors.NewErrParseInvalidToken(p.currentToken)
 		}
 		p.readToken()
 		e, er := p.parseExpr(LOWEST)
@@ -264,7 +264,7 @@ func (p *parser) parseFunctionExpr() (expr *ast.Expression, err error) {
 		f.FilterExpr = e
 		p.readToken()
 		if p.currentToken.Type != token.RIGHTPAREN {
-			return expr, errors.New("Parse Error Invalid Token")
+			return expr, errors.NewErrParseInvalidToken(p.currentToken)
 		}
 	}
 
@@ -276,7 +276,7 @@ func (p *parser) parseFunctionExpr() (expr *ast.Expression, err error) {
 			o.WindowName = p.currentToken.Literal
 		} else {
 			if p.currentToken.Type != token.LEFTPAREN {
-				return expr, errors.New("Parse Error Invalid Token")
+				return expr, errors.NewErrParseInvalidToken(p.currentToken)
 			}
 			p.readToken()
 			if p.currentToken.Type == token.IDENT {
@@ -286,7 +286,7 @@ func (p *parser) parseFunctionExpr() (expr *ast.Expression, err error) {
 			if p.currentToken.Type == token.K_PARTITION {
 				p.readToken()
 				if p.currentToken.Type != token.K_BY {
-					return expr, errors.New("Parse Error Invalid Token")
+					return expr, errors.NewErrParseInvalidToken(p.currentToken)
 				}
 				p.readToken()
 				for {
@@ -306,7 +306,7 @@ func (p *parser) parseFunctionExpr() (expr *ast.Expression, err error) {
 			if p.currentToken.Type == token.K_ORDER {
 				p.readToken()
 				if p.currentToken.Type != token.K_BY {
-					return expr, errors.New("Parse Error Invalid Token")
+					return expr, errors.NewErrParseInvalidToken(p.currentToken)
 				}
 				p.readToken()
 				for {
@@ -381,13 +381,13 @@ func (p *parser) parseFrameSpec() (fs *ast.FrameSpecification, err error) {
 		if p.currentToken.Type == token.K_UNBOUNDED {
 			p.readToken()
 			if p.currentToken.Type != token.K_PRECEDING {
-				return fs, errors.New("Perse Error: Invalid Token")
+				return fs, errors.NewErrParseInvalidToken(p.currentToken)
 			}
 			fs.UnboundedPreceding1 = true
 		} else if p.currentToken.Type == token.K_CURRENT {
 			p.readToken()
 			if p.currentToken.Type != token.K_ROW {
-				return fs, errors.New("Perse Error: Invalid Token")
+				return fs, errors.NewErrParseInvalidToken(p.currentToken)
 			}
 			fs.CurrentRow1 = true
 		} else {
@@ -401,24 +401,24 @@ func (p *parser) parseFrameSpec() (fs *ast.FrameSpecification, err error) {
 			} else if p.currentToken.Type == token.K_FOLLOWING {
 				fs.ExprFollowing1 = ex
 			} else {
-				return fs, errors.New("Perse Error: Invalid Token")
+				return fs, errors.NewErrParseInvalidToken(p.currentToken)
 			}
 		}
 		p.readToken()
 		if p.currentToken.Type != token.K_AND {
-			return fs, errors.New("Perse Error: Invalid Token")
+			return fs, errors.NewErrParseInvalidToken(p.currentToken)
 		}
 		p.readToken()
 		if p.currentToken.Type == token.K_UNBOUNDED {
 			p.readToken()
 			if p.currentToken.Type != token.K_FOLLOWING {
-				return fs, errors.New("Perse Error: Invalid Token")
+				return fs, errors.NewErrParseInvalidToken(p.currentToken)
 			}
 			fs.UnboundedFollowing2 = true
 		} else if p.currentToken.Type == token.K_CURRENT {
 			p.readToken()
 			if p.currentToken.Type != token.K_ROW {
-				return fs, errors.New("Perse Error: Invalid Token")
+				return fs, errors.NewErrParseInvalidToken(p.currentToken)
 			}
 			fs.CurrentRow2 = true
 		} else {
@@ -432,20 +432,20 @@ func (p *parser) parseFrameSpec() (fs *ast.FrameSpecification, err error) {
 			} else if p.currentToken.Type == token.K_FOLLOWING {
 				fs.ExprFollowing2 = ex
 			} else {
-				return fs, errors.New("Perse Error: Invalid Token")
+				return fs, errors.NewErrParseInvalidToken(p.currentToken)
 			}
 		}
 
 	} else if p.currentToken.Type == token.K_UNBOUNDED {
 		p.readToken()
 		if p.currentToken.Type != token.K_PRECEDING {
-			return fs, errors.New("Perse Error: Invalid Token")
+			return fs, errors.NewErrParseInvalidToken(p.currentToken)
 		}
 		fs.UnboundedPreceding = true
 	} else if p.currentToken.Type == token.K_CURRENT {
 		p.readToken()
 		if p.currentToken.Type != token.K_ROW {
-			return fs, errors.New("Perse Error: Invalid Token")
+			return fs, errors.NewErrParseInvalidToken(p.currentToken)
 		}
 		fs.CurrentRow = true
 	} else {
@@ -456,7 +456,7 @@ func (p *parser) parseFrameSpec() (fs *ast.FrameSpecification, err error) {
 		fs.ExprPreceding = ex
 		p.readToken()
 		if p.currentToken.Type != token.K_PRECEDING {
-			return fs, errors.New("Perse Error: Invalid Token")
+			return fs, errors.NewErrParseInvalidToken(p.currentToken)
 		}
 	}
 
@@ -466,13 +466,13 @@ func (p *parser) parseFrameSpec() (fs *ast.FrameSpecification, err error) {
 		if p.currentToken.Type == token.K_NO {
 			p.readToken()
 			if p.currentToken.Type != token.K_OTHERS {
-				return fs, errors.New("Perse Error: Invalid Token")
+				return fs, errors.NewErrParseInvalidToken(p.currentToken)
 			}
 			fs.ExcludeNoOthers = true
 		} else if p.currentToken.Type == token.K_CURRENT {
 			p.readToken()
 			if p.currentToken.Type != token.K_ROW {
-				return fs, errors.New("Perse Error: Invalid Token")
+				return fs, errors.NewErrParseInvalidToken(p.currentToken)
 			}
 			fs.ExcludeCurrentRow = true
 		} else if p.currentToken.Type == token.K_GROUP {
@@ -493,7 +493,7 @@ func (p *parser) parseCastExpr() (expr *ast.Expression, err error) {
 
 	p.readToken()
 	if p.currentToken.Type != token.LEFTPAREN {
-		return expr, errors.New("Parse Error: Invalid Token")
+		return expr, errors.NewErrParseInvalidToken(p.currentToken)
 	}
 	p.readToken()
 	e, er := p.parseExpr(LOWEST)
@@ -503,7 +503,7 @@ func (p *parser) parseCastExpr() (expr *ast.Expression, err error) {
 	c.Expr = e
 	p.readToken()
 	if p.currentToken.Type != token.K_AS {
-		return expr, errors.New("Parse Error: Invalid Token")
+		return expr, errors.NewErrParseInvalidToken(p.currentToken)
 	}
 	p.readToken()
 	c.TypeName = p.currentToken.Literal
@@ -518,11 +518,11 @@ func (p *parser) parseCastExpr() (expr *ast.Expression, err error) {
 			p.readToken()
 		}
 		if p.currentToken.Type != token.NUMBER {
-			return expr, errors.New("Parse Error: Invalid Token")
+			return expr, errors.NewErrParseInvalidToken(p.currentToken)
 		}
 		nn, er := strconv.ParseInt(p.currentToken.Literal, 10, 32)
 		if er != nil {
-			return expr, errors.New("Parse Error: strconv error")
+			return expr, errors.NewErrParseInvalidToken(p.currentToken)
 		}
 		c.N1 = n * int(nn)
 		c.IsN1 = true
@@ -538,23 +538,23 @@ func (p *parser) parseCastExpr() (expr *ast.Expression, err error) {
 				p.readToken()
 			}
 			if p.currentToken.Type != token.NUMBER {
-				return expr, errors.New("Parse Error: Invalid Token")
+				return expr, errors.NewErrParseInvalidToken(p.currentToken)
 			}
 			nn, er := strconv.ParseInt(p.currentToken.Literal, 10, 32)
 			if er != nil {
-				return expr, errors.New("Parse Error: strconv error")
+				return expr, errors.NewErrParseInvalidToken(p.currentToken)
 			}
 			c.N2 = n * int(nn)
 			c.IsN2 = true
 			p.readToken()
 		}
 		if p.currentToken.Type != token.RIGHTPAREN {
-			return expr, errors.New("Parse Error: Invalid Token")
+			return expr, errors.NewErrParseInvalidToken(p.currentToken)
 		}
 		p.readToken()
 	}
 	if p.currentToken.Type != token.RIGHTPAREN {
-		return expr, errors.New("Parse Error: Invalid Token")
+		return expr, errors.NewErrParseInvalidToken(p.currentToken)
 	}
 	expr.Cast = c
 	return
@@ -573,12 +573,12 @@ func (p *parser) parseExistsExpr() (expr *ast.Expression, err error) {
 
 	p.readToken()
 	if p.currentToken.Type != token.LEFTPAREN {
-		return expr, errors.New("Parse Error Invalid Token")
+		return expr, errors.NewErrParseInvalidToken(p.currentToken)
 	}
 	p.readToken()
 
 	if !(p.currentToken.Type == token.K_WITH || p.currentToken.Type == token.K_SELECT || p.currentToken.Type == token.K_VALUES) {
-		return expr, errors.New("Parse Error: Invalid Token")
+		return expr, errors.NewErrParseInvalidToken(p.currentToken)
 	}
 
 	ss, er := p.parseSelectStatement()
@@ -587,7 +587,7 @@ func (p *parser) parseExistsExpr() (expr *ast.Expression, err error) {
 	}
 	r.SelectStatement = ss
 	if p.currentToken.Type != token.RIGHTPAREN {
-		return expr, errors.New("Parse Error: Invalid Token")
+		return expr, errors.NewErrParseInvalidToken(p.currentToken)
 	}
 
 	expr = &ast.Expression{}
@@ -615,7 +615,7 @@ func (p *parser) parseCaseExpr() (expr *ast.Expression, err error) {
 	for {
 		w := &ast.WhenThen{}
 		if p.currentToken.Type != token.K_WHEN {
-			return expr, errors.New("Parse Error Invalid Token")
+			return expr, errors.NewErrParseInvalidToken(p.currentToken)
 		}
 		p.readToken()
 		ex, er := p.parseExpr(LOWEST)
@@ -627,7 +627,7 @@ func (p *parser) parseCaseExpr() (expr *ast.Expression, err error) {
 		p.readToken()
 
 		if p.currentToken.Type != token.K_THEN {
-			return expr, errors.New("Parse Error Invalid Token")
+			return expr, errors.NewErrParseInvalidToken(p.currentToken)
 		}
 		p.readToken()
 
@@ -652,7 +652,7 @@ func (p *parser) parseCaseExpr() (expr *ast.Expression, err error) {
 		p.readToken()
 	}
 	if p.currentToken.Type != token.K_END {
-		return expr, errors.New("Parse Error Invalid Token")
+		return expr, errors.NewErrParseInvalidToken(p.currentToken)
 	}
 
 	expr = &ast.Expression{}
@@ -774,7 +774,7 @@ func (p *parser) parseBetweenExpr(left *ast.Expression) (expr *ast.Expression, e
 	r.Expr2 = ex
 	p.readToken()
 	if p.currentToken.Type != token.K_AND {
-		return expr, errors.New("Parse Error Invalid Token")
+		return expr, errors.NewErrParseInvalidToken(p.currentToken)
 	}
 	p.readToken()
 	ex, er = p.parseExpr(LOWEST)
@@ -821,12 +821,12 @@ func (p *parser) parseInExpr(left *ast.Expression) (expr *ast.Expression, err er
 			p.readToken()
 			p.readToken()
 			if p.currentToken.Type != token.IDENT {
-				return expr, errors.New("Parse Error Invalid Token")
+				return expr, errors.NewErrParseInvalidToken(p.currentToken)
 			}
 		}
 		r.Table = p.currentToken.Literal
 	} else {
-		return expr, errors.New("Parse Error Invalid Token")
+		return expr, errors.NewErrParseInvalidToken(p.currentToken)
 	}
 	expr = &ast.Expression{}
 
@@ -869,5 +869,6 @@ func (p *parser) parseNotExpr(left *ast.Expression) (expr *ast.Expression, err e
 		expr = ex
 	}
 
+	p.readToken()
 	return
 }
