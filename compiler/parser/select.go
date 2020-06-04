@@ -44,10 +44,6 @@ func (p *parser) parseSelectClause() (sc *ast.SelectClause, err error) {
 				return sc, e
 			}
 			sc.FromClause = f
-			/*if p.currentToken.Type != token.RIGHTPAREN {
-				p.readToken()
-			}*/
-
 		}
 
 		if p.currentToken.Type == token.K_WHERE {
@@ -71,7 +67,12 @@ func (p *parser) parseSelectClause() (sc *ast.SelectClause, err error) {
 			sc.GroupByExpression = g
 		}
 		if p.currentToken.Type == token.K_WINDOW {
-			p.parseWindowClause()
+			p.readToken()
+			w, e := p.parseWindowClause()
+			if e != nil {
+				return sc, e
+			}
+			sc.WindowExpression = w
 		}
 	}
 	return

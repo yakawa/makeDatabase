@@ -139,10 +139,6 @@ func (p *parser) parseWindowDefinition() (d *ast.WindowDefinition, err error) {
 		d.Frame = fs
 	}
 	p.readToken()
-	if p.currentToken.Type != token.RIGHTPAREN {
-		return d, errors.NewErrParseInvalidToken(p.currentToken)
-	}
-	p.readToken()
 	return
 }
 

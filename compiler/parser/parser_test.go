@@ -349,11 +349,13 @@ func TestExpression(t *testing.T) {
              Expression:
               Column: c6
              DESC: true
-         Frame:
+         FrameSpec:
           Rows: true
-          UnboundedPreceding1: true
-          ExprPreceding2:
-           Column: c4
+          BetweenBefore:
+           UnboundedPreceding: true
+          BetweenAfter:
+           ExprPreceding:
+            Column: c4
           ExcludeCurrentRow: true
 `),
 		},
@@ -611,7 +613,6 @@ func TestExpression(t *testing.T) {
            Table: t1
 `),
 		},
-
 		{"SELECT c1 FROM t1 WHERE c1 > 3;",
 			string(`SQL:
  SELECTStatement:
@@ -629,6 +630,169 @@ func TestExpression(t *testing.T) {
      Column: c1
     Ope2:
      Number: 3
+`),
+		},
+		{"SELECT c1 FROM (SELECT c3, c4 FROM t1 WHERE c3 > 2);",
+			string(`SQL:
+ SELECTStatement:
+  SELECT:
+   ResultColumns:
+    - Expression:
+       Column: c1
+  FROM:
+   - ToS:
+      SubQuery:
+       SELECT:
+        ResultColumns:
+         - Expression:
+            Column: c3
+         - Expression:
+            Column: c4
+       FROM:
+        - ToS:
+           Table: t1
+       WHERE:
+        BinaryOpe:
+         Operator: ">"
+         Ope1:
+          Column: c3
+         Ope2:
+          Number: 2
+`),
+		}, {"SELECT c1 FROM (SELECT c3, c4 FROM t1) WHERE c3 > 3;",
+			string(`SQL:
+ SELECTStatement:
+  SELECT:
+   ResultColumns:
+    - Expression:
+       Column: c1
+  FROM:
+   - ToS:
+      SubQuery:
+       SELECT:
+        ResultColumns:
+         - Expression:
+            Column: c3
+         - Expression:
+            Column: c4
+       FROM:
+        - ToS:
+           Table: t1
+  WHERE:
+   BinaryOpe:
+    Operator: ">"
+    Ope1:
+     Column: c3
+    Ope2:
+     Number: 3
+`),
+		},
+		{"SELECT c1, c2, SUM(c1) FROM t1 WHERE c1 > 3 GROUP BY c1, c2 HAVING c2 = 3;",
+			string(`SQL:
+ SELECTStatement:
+  SELECT:
+   ResultColumns:
+    - Expression:
+       Column: c1
+    - Expression:
+       Column: c2
+    - Expression:
+       Function:
+        Name: SUM
+        ARGS:
+         - arg:
+            Column: c1
+  FROM:
+   - ToS:
+      Table: t1
+  WHERE:
+   BinaryOpe:
+    Operator: ">"
+    Ope1:
+     Column: c1
+    Ope2:
+     Number: 3
+  GROUPBy:
+   Grouping:
+    - Expression:
+       Column: c1
+    - Expression:
+       Column: c2
+   Condition:
+    - Expression:
+       BinaryOpe:
+        Operator: "="
+        Ope1:
+         Column: c2
+        Ope2:
+         Number: 3
+`),
+		},
+		{"SELECT c1, c2, SUM(c1) FROM t1 WINDOW w1 AS (b1 PARTITION BY c1, c2 ORDER BY c1 DESC NULLS FIRST RANGE c2 PRECEDING EXCLUDE CURRENT ROW);",
+			string(`SQL:
+ SELECTStatement:
+  SELECT:
+   ResultColumns:
+    - Expression:
+       Column: c1
+    - Expression:
+       Column: c2
+    - Expression:
+       Function:
+        Name: SUM
+        ARGS:
+         - arg:
+            Column: c1
+  FROM:
+   - ToS:
+      Table: t1
+  Window:
+   Definition:
+    - Function:
+       Name: w1
+       BaseWindowName: b1
+       Partition:
+        - Expression:
+           Column: c1
+        - Expression:
+           Column: c2
+       OrderBy:
+        - Order:
+           Expression:
+            Column: c1
+         DESC: true
+         NULLSFirst: true
+       FrameSpec:
+        Range: true
+        Preceding:
+         Column: c2
+        ExcludeCurrentRow: true
+`),
+		},
+		{"SELECT c1, c2, SUM(c1) FROM t1 GROUP BY c1, c2;",
+			string(`SQL:
+ SELECTStatement:
+  SELECT:
+   ResultColumns:
+    - Expression:
+       Column: c1
+    - Expression:
+       Column: c2
+    - Expression:
+       Function:
+        Name: SUM
+        ARGS:
+         - arg:
+            Column: c1
+  FROM:
+   - ToS:
+      Table: t1
+  GROUPBy:
+   Grouping:
+    - Expression:
+       Column: c1
+    - Expression:
+       Column: c2
 `),
 		},
 	}

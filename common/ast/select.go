@@ -7,7 +7,7 @@ type SelectClause struct {
 	FromClause        *FromClause
 	WhereClause       *WhereClause
 	GroupByExpression *GroupByExpression
-	WindowExpression  []WindowExpression
+	WindowExpression  *WindowExpression
 }
 
 type ResultColumn struct {

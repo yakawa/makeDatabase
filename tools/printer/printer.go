@@ -64,6 +64,9 @@ func printSelectStatement(ss *ast.SelectStatement, sp string) string {
 					out.WriteString(fmt.Sprintf("%s", printExpression(ss.SelectClause.GroupByExpression.HavingExpr, sp+"     ")))
 				}
 			}
+			if ss.SelectClause.WindowExpression != nil {
+				out.WriteString(fmt.Sprintf("%s", printWindowClause(ss.SelectClause.WindowExpression, sp)))
+			}
 		}
 	}
 	if ss.ValuesClause != nil {
@@ -409,7 +412,7 @@ func printFunctionExpression(f *ast.Function, sp string) string {
 				}
 			}
 			if f.OverClause.FrameSpec != nil {
-				out.WriteString(fmt.Sprintf("%s Frame:\n", sp))
+				out.WriteString(fmt.Sprintf("%s FrameSpec:\n", sp))
 				if f.OverClause.FrameSpec.Range {
 					out.WriteString(fmt.Sprintf("%s  Range: true\n", sp))
 				}
@@ -429,34 +432,43 @@ func printFunctionExpression(f *ast.Function, sp string) string {
 					out.WriteString(fmt.Sprintf("%s  ExprPreceding:\n", sp))
 					out.WriteString(fmt.Sprintf("%s", printExpression(f.OverClause.FrameSpec.ExprPreceding, sp+"   ")))
 				}
-				if f.OverClause.FrameSpec.UnboundedPreceding1 {
-					out.WriteString(fmt.Sprintf("%s  UnboundedPreceding1: true\n", sp))
+				if f.OverClause.FrameSpec.UnboundedPreceding1 || f.OverClause.FrameSpec.CurrentRow1 || f.OverClause.FrameSpec.ExprPreceding1 != nil || f.OverClause.FrameSpec.ExprFollowing1 != nil {
+					out.WriteString(fmt.Sprintf("%s  BetweenBefore:\n", sp))
+
+					if f.OverClause.FrameSpec.UnboundedPreceding1 {
+						out.WriteString(fmt.Sprintf("%s   UnboundedPreceding: true\n", sp))
+					}
+					if f.OverClause.FrameSpec.CurrentRow1 {
+						out.WriteString(fmt.Sprintf("%s   CurrentRow: true\n", sp))
+					}
+					if f.OverClause.FrameSpec.ExprPreceding1 != nil {
+						out.WriteString(fmt.Sprintf("%s   ExprPreceding:\n", sp))
+						out.WriteString(fmt.Sprintf("%s", printExpression(f.OverClause.FrameSpec.ExprPreceding1, sp+"    ")))
+					}
+					if f.OverClause.FrameSpec.ExprFollowing1 != nil {
+						out.WriteString(fmt.Sprintf("%s   ExprFollowing:\n", sp))
+						out.WriteString(fmt.Sprintf("%s", printExpression(f.OverClause.FrameSpec.ExprFollowing1, sp+"    ")))
+					}
 				}
-				if f.OverClause.FrameSpec.CurrentRow1 {
-					out.WriteString(fmt.Sprintf("%s  CurrentRow1: true\n", sp))
+				if f.OverClause.FrameSpec.UnboundedFollowing2 || f.OverClause.FrameSpec.CurrentRow2 || f.OverClause.FrameSpec.ExprPreceding2 != nil || f.OverClause.FrameSpec.ExprFollowing2 != nil {
+					out.WriteString(fmt.Sprintf("%s  BetweenAfter:\n", sp))
+
+					if f.OverClause.FrameSpec.UnboundedFollowing2 {
+						out.WriteString(fmt.Sprintf("%s   UnboundedFollowing: true\n", sp))
+					}
+					if f.OverClause.FrameSpec.CurrentRow2 {
+						out.WriteString(fmt.Sprintf("%s   CurrentRow: true\n", sp))
+					}
+					if f.OverClause.FrameSpec.ExprPreceding2 != nil {
+						out.WriteString(fmt.Sprintf("%s   ExprPreceding:\n", sp))
+						out.WriteString(fmt.Sprintf("%s", printExpression(f.OverClause.FrameSpec.ExprPreceding2, sp+"    ")))
+					}
+					if f.OverClause.FrameSpec.ExprFollowing2 != nil {
+						out.WriteString(fmt.Sprintf("%s   ExprFollowing:\n", sp))
+						out.WriteString(fmt.Sprintf("%s", printExpression(f.OverClause.FrameSpec.ExprFollowing2, sp+"    ")))
+					}
 				}
-				if f.OverClause.FrameSpec.ExprPreceding1 != nil {
-					out.WriteString(fmt.Sprintf("%s  ExprPreceding1:\n", sp))
-					out.WriteString(fmt.Sprintf("%s", printExpression(f.OverClause.FrameSpec.ExprPreceding1, sp+"   ")))
-				}
-				if f.OverClause.FrameSpec.ExprFollowing1 != nil {
-					out.WriteString(fmt.Sprintf("%s  ExprFollowing1:\n", sp))
-					out.WriteString(fmt.Sprintf("%s", printExpression(f.OverClause.FrameSpec.ExprFollowing1, sp+"   ")))
-				}
-				if f.OverClause.FrameSpec.UnboundedFollowing2 {
-					out.WriteString(fmt.Sprintf("%s  UnboundedFollowing2: true\n", sp))
-				}
-				if f.OverClause.FrameSpec.CurrentRow2 {
-					out.WriteString(fmt.Sprintf("%s  CurrentRow2: true\n", sp))
-				}
-				if f.OverClause.FrameSpec.ExprPreceding2 != nil {
-					out.WriteString(fmt.Sprintf("%s  ExprPreceding2:\n", sp))
-					out.WriteString(fmt.Sprintf("%s", printExpression(f.OverClause.FrameSpec.ExprPreceding2, sp+"   ")))
-				}
-				if f.OverClause.FrameSpec.ExprFollowing2 != nil {
-					out.WriteString(fmt.Sprintf("%s  ExprFollowing2:\n", sp))
-					out.WriteString(fmt.Sprintf("%s", printExpression(f.OverClause.FrameSpec.ExprFollowing2, sp+"   ")))
-				}
+
 				if f.OverClause.FrameSpec.ExcludeNoOthers {
 					out.WriteString(fmt.Sprintf("%s  ExcludeNoOthers: true\n", sp))
 				}
@@ -541,33 +553,102 @@ func printWindowClause(w *ast.WindowExpression, sp string) string {
 		if len(d.PartitionExpr) != 0 {
 			out.WriteString(fmt.Sprintf("%s     Partition:\n", sp))
 			for _, p := range d.PartitionExpr {
-				out.WriteString(fmt.Sprintf("%s       - Expression:\n", sp))
-				out.WriteString(fmt.Sprintf("%s", printExpression(&p, sp+"       ")))
+				out.WriteString(fmt.Sprintf("%s      - Expression:\n", sp))
+				out.WriteString(fmt.Sprintf("%s", printExpression(&p, sp+"         ")))
 			}
 		}
 
 		if len(d.OrderExpr) != 0 {
 			out.WriteString(fmt.Sprintf("%s     OrderBy:\n", sp))
 			for _, o := range d.OrderExpr {
-				out.WriteString(fmt.Sprintf("%s       - Order:\n", sp))
-				out.WriteString(fmt.Sprintf("%s          Expression:\n", sp))
+				out.WriteString(fmt.Sprintf("%s      - Order:\n", sp))
+				out.WriteString(fmt.Sprintf("%s         Expression:\n", sp))
 				out.WriteString(fmt.Sprintf("%s", printExpression(o.Expr, sp+"          ")))
 				if len(o.CollateName) != 0 {
 					out.WriteString(fmt.Sprintf("%s        Collation: %s\n", sp, o.CollateName))
 				}
 				if o.Asc {
-					out.WriteString(fmt.Sprintf("%s        ASC: true\n", sp))
+					out.WriteString(fmt.Sprintf("%s       ASC: true\n", sp))
 				}
 				if o.Desc {
-					out.WriteString(fmt.Sprintf("%s        DESC: true\n", sp))
+					out.WriteString(fmt.Sprintf("%s       DESC: true\n", sp))
 				}
 				if o.NullsFirst {
-					out.WriteString(fmt.Sprintf("%s        NULLSFirst: true\n", sp))
+					out.WriteString(fmt.Sprintf("%s       NULLSFirst: true\n", sp))
 				}
 				if o.NullsLast {
-					out.WriteString(fmt.Sprintf("%s        NULLSLast: true\n", sp))
+					out.WriteString(fmt.Sprintf("%s       NULLSLast: true\n", sp))
 				}
 			}
+		}
+		if d.Frame != nil {
+			out.WriteString(fmt.Sprintf("%s     FrameSpec:\n", sp))
+			if d.Frame.Range {
+				out.WriteString(fmt.Sprintf("%s      Range: true\n", sp))
+			}
+			if d.Frame.Rows {
+				out.WriteString(fmt.Sprintf("%s      Rows: true\n", sp))
+			}
+			if d.Frame.Rows {
+				out.WriteString(fmt.Sprintf("%s      Groups: true\n", sp))
+			}
+			if d.Frame.UnboundedPreceding {
+				out.WriteString(fmt.Sprintf("%s      UnboundedPreceding: true\n", sp))
+			}
+			if d.Frame.CurrentRow {
+				out.WriteString(fmt.Sprintf("%s      CurrentRow: true\n", sp))
+			}
+			if d.Frame.ExprPreceding != nil {
+				out.WriteString(fmt.Sprintf("%s      Preceding:\n", sp))
+				out.WriteString(fmt.Sprintf("%s", printExpression(d.Frame.ExprPreceding, sp+"       ")))
+			}
+			if d.Frame.UnboundedPreceding1 || d.Frame.CurrentRow1 || d.Frame.ExprPreceding1 != nil || d.Frame.ExprFollowing1 != nil {
+				out.WriteString(fmt.Sprintf("%s      BetweenBefore:\n", sp))
+				if d.Frame.UnboundedPreceding1 {
+					out.WriteString(fmt.Sprintf("%s       UnboundedPreceding: true\n", sp))
+				}
+				if d.Frame.CurrentRow1 {
+					out.WriteString(fmt.Sprintf("%s       CurrentRow: true\n", sp))
+				}
+				if d.Frame.ExprPreceding1 != nil {
+					out.WriteString(fmt.Sprintf("%s       ExprPreceding:\n", sp))
+					out.WriteString(fmt.Sprintf("%s", printExpression(d.Frame.ExprPreceding1, sp+"        ")))
+				}
+				if d.Frame.ExprFollowing1 != nil {
+					out.WriteString(fmt.Sprintf("%s       ExprFollowing:\n", sp))
+					out.WriteString(fmt.Sprintf("%s", printExpression(d.Frame.ExprFollowing1, sp+"        ")))
+				}
+			}
+			if d.Frame.UnboundedFollowing2 || d.Frame.CurrentRow2 || d.Frame.ExprPreceding2 != nil || d.Frame.ExprFollowing2 != nil {
+				out.WriteString(fmt.Sprintf("%s      BetweenAfter:\n", sp))
+				if d.Frame.UnboundedFollowing2 {
+					out.WriteString(fmt.Sprintf("%s       UnboundedFollowing: true\n", sp))
+				}
+				if d.Frame.CurrentRow2 {
+					out.WriteString(fmt.Sprintf("%s       CurrentRow: true\n", sp))
+				}
+				if d.Frame.ExprPreceding2 != nil {
+					out.WriteString(fmt.Sprintf("%s       ExprPreceding:\n", sp))
+					out.WriteString(fmt.Sprintf("%s", printExpression(d.Frame.ExprPreceding2, sp+"        ")))
+				}
+				if d.Frame.ExprFollowing2 != nil {
+					out.WriteString(fmt.Sprintf("%s       ExprFollowing:\n", sp))
+					out.WriteString(fmt.Sprintf("%s", printExpression(d.Frame.ExprFollowing2, sp+"        ")))
+				}
+			}
+			if d.Frame.ExcludeNoOthers {
+				out.WriteString(fmt.Sprintf("%s      ExcludeNoOthers: true\n", sp))
+			}
+			if d.Frame.ExcludeCurrentRow {
+				out.WriteString(fmt.Sprintf("%s      ExcludeCurrentRow: true\n", sp))
+			}
+			if d.Frame.ExcludeGroup {
+				out.WriteString(fmt.Sprintf("%s      ExcludeGroup: true\n", sp))
+			}
+			if d.Frame.ExcludeTies {
+				out.WriteString(fmt.Sprintf("%s      ExcludeTies: true\n", sp))
+			}
+
 		}
 	}
 	return out.String()
