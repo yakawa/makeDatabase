@@ -5,7 +5,7 @@ import (
 	"github.com/yakawa/makeDatabase/logger"
 )
 
-func (p *parser) parseWhere() (w *ast.WhereClause, err error) {
+func (p *parser) parseWhereClause() (w *ast.WhereClause, err error) {
 	logger.Tracef("Parse: WHERE Clause")
 	defer logger.Tracef("Parse: WHERE Clause End")
 

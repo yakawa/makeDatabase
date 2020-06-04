@@ -3,6 +3,7 @@ package parser
 import (
 	"testing"
 
+	"github.com/yakawa/makeDatabase/common/errors"
 	"github.com/yakawa/makeDatabase/compiler/lexer"
 	"github.com/yakawa/makeDatabase/tools/printer"
 )
@@ -395,6 +396,241 @@ func TestExpression(t *testing.T) {
          Column: c1
 `),
 		},
+		{"SELECT c1 FROM t1 AS a1;",
+			string(`SQL:
+ SELECTStatement:
+  SELECT:
+   ResultColumns:
+    - Expression:
+       Column: c1
+  FROM:
+   - ToS:
+      Table: t1
+      Alias: a1
+`),
+		},
+		{"SELECT c1 FROM t1 AS a1 INNER JOIN t2 AS a2 ON a1.c1 = a2.c2;",
+			string(`SQL:
+ SELECTStatement:
+  SELECT:
+   ResultColumns:
+    - Expression:
+       Column: c1
+  FROM:
+   - ToS:
+      Table: t1
+      Alias: a1
+   - ToS:
+      Table: t2
+      Alias: a2
+      JOIN: Inner
+      OnExpr:
+       BinaryOpe:
+        Operator: "="
+        Ope1:
+         Table: a1
+         Column: c1
+        Ope2:
+         Table: a2
+         Column: c2
+`),
+		},
+		{"SELECT c1 FROM t1 INNER JOIN t2 ON a1.c1 = a2.c2;",
+			string(`SQL:
+ SELECTStatement:
+  SELECT:
+   ResultColumns:
+    - Expression:
+       Column: c1
+  FROM:
+   - ToS:
+      Table: t1
+   - ToS:
+      Table: t2
+      JOIN: Inner
+      OnExpr:
+       BinaryOpe:
+        Operator: "="
+        Ope1:
+         Table: a1
+         Column: c1
+        Ope2:
+         Table: a2
+         Column: c2
+`),
+		},
+		{"SELECT c1 FROM t1 LEFT OUTER JOIN t2 ON a1.c1 = a2.c2;",
+			string(`SQL:
+ SELECTStatement:
+  SELECT:
+   ResultColumns:
+    - Expression:
+       Column: c1
+  FROM:
+   - ToS:
+      Table: t1
+   - ToS:
+      Table: t2
+      JOIN: Left
+      OnExpr:
+       BinaryOpe:
+        Operator: "="
+        Ope1:
+         Table: a1
+         Column: c1
+        Ope2:
+         Table: a2
+         Column: c2
+`),
+		},
+		{"SELECT c1 FROM t1 LEFT JOIN t2 ON a1.c1 = a2.c2;",
+			string(`SQL:
+ SELECTStatement:
+  SELECT:
+   ResultColumns:
+    - Expression:
+       Column: c1
+  FROM:
+   - ToS:
+      Table: t1
+   - ToS:
+      Table: t2
+      JOIN: Left
+      OnExpr:
+       BinaryOpe:
+        Operator: "="
+        Ope1:
+         Table: a1
+         Column: c1
+        Ope2:
+         Table: a2
+         Column: c2
+`),
+		},
+		{"SELECT c1 FROM t1 RIGHT JOIN t2 ON a1.c1 = a2.c2;",
+			string(`SQL:
+ SELECTStatement:
+  SELECT:
+   ResultColumns:
+    - Expression:
+       Column: c1
+  FROM:
+   - ToS:
+      Table: t1
+   - ToS:
+      Table: t2
+      JOIN: Right
+      OnExpr:
+       BinaryOpe:
+        Operator: "="
+        Ope1:
+         Table: a1
+         Column: c1
+        Ope2:
+         Table: a2
+         Column: c2
+`),
+		},
+		{"SELECT c1 FROM t1 NATURAL JOIN t2 ON a1.c1 = a2.c2;",
+			string(`SQL:
+ SELECTStatement:
+  SELECT:
+   ResultColumns:
+    - Expression:
+       Column: c1
+  FROM:
+   - ToS:
+      Table: t1
+   - ToS:
+      Table: t2
+      JOIN: Natural
+      OnExpr:
+       BinaryOpe:
+        Operator: "="
+        Ope1:
+         Table: a1
+         Column: c1
+        Ope2:
+         Table: a2
+         Column: c2
+`),
+		},
+		{"SELECT c1 FROM t1, t2 USING(c1);",
+			string(`SQL:
+ SELECTStatement:
+  SELECT:
+   ResultColumns:
+    - Expression:
+       Column: c1
+  FROM:
+   - ToS:
+      Table: t1
+   - ToS:
+      Table: t2
+      JOIN: Cross
+      Using:
+       - Column: c1
+`),
+		},
+		{"SELECT c1 FROM t1, t2 USING(c1, c2);",
+			string(`SQL:
+ SELECTStatement:
+  SELECT:
+   ResultColumns:
+    - Expression:
+       Column: c1
+  FROM:
+   - ToS:
+      Table: t1
+   - ToS:
+      Table: t2
+      JOIN: Cross
+      Using:
+       - Column: c1
+       - Column: c2
+`),
+		},
+		{"SELECT c1 FROM (SELECT c3, c4 FROM t1);",
+			string(`SQL:
+ SELECTStatement:
+  SELECT:
+   ResultColumns:
+    - Expression:
+       Column: c1
+  FROM:
+   - ToS:
+      SubQuery:
+       SELECT:
+        ResultColumns:
+         - Expression:
+            Column: c3
+         - Expression:
+            Column: c4
+       FROM:
+        - ToS:
+           Table: t1
+`),
+		},
+
+		{"SELECT c1 FROM t1 WHERE c1 > 3;",
+			string(`SQL:
+ SELECTStatement:
+  SELECT:
+   ResultColumns:
+    - Expression:
+       Column: c1
+  FROM:
+   - ToS:
+      Table: t1
+  WHERE:
+   BinaryOpe:
+    Operator: ">"
+    Ope1:
+     Column: c1
+    Ope2:
+     Number: 3
+`),
+		},
 	}
 
 	for i, tc := range testCases {
@@ -402,6 +638,8 @@ func TestExpression(t *testing.T) {
 		sql, err := Parse(l)
 		if err != nil {
 			t.Errorf("[%d] Returned not nil %s", i, err)
+			t.Log(tc.input)
+			t.Log(err.(*errors.ErrParseInvalid).PrintStack(5))
 		}
 		y := printer.PrintSQL(sql)
 		if y != tc.expected {

@@ -7,7 +7,7 @@ import (
 	"github.com/yakawa/makeDatabase/logger"
 )
 
-func (p *parser) parseFrom() (fr *ast.FromClause, err error) {
+func (p *parser) parseFromClause() (fr *ast.FromClause, err error) {
 	logger.Tracef("Parse: FROM Clause %#+v", p.currentToken)
 	defer logger.Tracef("Parse: FROM Clause End")
 
@@ -17,7 +17,6 @@ func (p *parser) parseFrom() (fr *ast.FromClause, err error) {
 
 	for i := 0; ; i++ {
 		ts := &ast.TableOrSubquery{}
-
 		if p.currentToken.Type == token.K_NATURAL {
 			ts.Natural = true
 			p.readToken()
@@ -98,16 +97,17 @@ func (p *parser) parseFrom() (fr *ast.FromClause, err error) {
 
 		fr.ToS = append(fr.ToS, *ts)
 
-		if p.peekToken().Type != token.COMMA && !(p.peekToken().Type == token.K_LEFT || p.peekToken().Type == token.K_RIGHT || p.peekToken().Type == token.K_INNER || p.peekToken().Type == token.K_CROSS) {
+		p.readToken()
+		if p.currentToken.Type != token.COMMA && !(p.currentToken.Type == token.K_LEFT || p.currentToken.Type == token.K_RIGHT || p.currentToken.Type == token.K_INNER || p.currentToken.Type == token.K_CROSS || p.currentToken.Type == token.K_NATURAL) {
 
 			break
 		}
-		p.readToken()
 
 		if p.currentToken.Type == token.COMMA {
 			p.readToken()
 		}
 	}
+
 	return
 }
 
@@ -132,7 +132,6 @@ func (p *parser) parseToS() (ts *ast.TableOrSubquery, err error) {
 			}
 			ts = tos
 		}
-		p.readToken()
 		if p.currentToken.Type != token.RIGHTPAREN {
 			return ts, errors.NewErrParseInvalidToken(p.currentToken)
 		}

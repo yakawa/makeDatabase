@@ -6,7 +6,7 @@ import (
 	"github.com/yakawa/makeDatabase/logger"
 )
 
-func (p *parser) parseGroupBy() (gb *ast.GroupByExpression, err error) {
+func (p *parser) parseGroupByClause() (gb *ast.GroupByExpression, err error) {
 	logger.Tracef("Parse: GroupBy Clause")
 	defer logger.Tracef("Parse: GroupBy Clause End")
 

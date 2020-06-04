@@ -520,7 +520,7 @@ func printFromClause(fr *ast.FromClause, sp string) string {
 			if len(ts.ColumnNames) != 0 {
 				out.WriteString(fmt.Sprintf("%s   Using:\n", sp))
 				for _, c := range ts.ColumnNames {
-					out.WriteString(fmt.Sprintf("%s    - column: %s\n", sp, c))
+					out.WriteString(fmt.Sprintf("%s    - Column: %s\n", sp, c))
 				}
 			}
 		}

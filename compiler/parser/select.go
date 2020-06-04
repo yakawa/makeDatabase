@@ -29,8 +29,6 @@ func (p *parser) parseSelectClause() (sc *ast.SelectClause, err error) {
 			}
 			sc.ResultColumns = append(sc.ResultColumns, r)
 
-			p.readToken()
-
 			if p.currentToken.Type != token.COMMA {
 				break
 			}
@@ -41,16 +39,20 @@ func (p *parser) parseSelectClause() (sc *ast.SelectClause, err error) {
 			return
 		}
 		if p.currentToken.Type == token.K_FROM {
-			f, e := p.parseFrom()
+			f, e := p.parseFromClause()
 			if e != nil {
 				return sc, e
 			}
 			sc.FromClause = f
-			p.readToken()
+			/*if p.currentToken.Type != token.RIGHTPAREN {
+				p.readToken()
+			}*/
+
 		}
+
 		if p.currentToken.Type == token.K_WHERE {
 			p.readToken()
-			w, e := p.parseWhere()
+			w, e := p.parseWhereClause()
 			if e != nil {
 				return sc, e
 			}
@@ -62,14 +64,14 @@ func (p *parser) parseSelectClause() (sc *ast.SelectClause, err error) {
 				return sc, errors.NewErrParseInvalidToken(p.currentToken)
 			}
 			p.readToken()
-			g, e := p.parseGroupBy()
+			g, e := p.parseGroupByClause()
 			if e != nil {
 				return sc, e
 			}
 			sc.GroupByExpression = g
 		}
 		if p.currentToken.Type == token.K_WINDOW {
-			//p.parseWindow()
+			p.parseWindowClause()
 		}
 	}
 	return
@@ -128,8 +130,10 @@ func (p *parser) parseResultColumn() (rc ast.ResultColumn, err error) {
 			return rc, errors.NewErrParseInvalidToken(p.currentToken)
 		}
 		rc.Alias = p.currentToken.Literal
+		p.readToken()
 	} else if p.currentToken.Type == token.IDENT {
 		rc.Alias = p.currentToken.Literal
+		p.readToken()
 	}
 	return
 }

@@ -130,16 +130,17 @@ func (p *parser) parse() (a *ast.SQL, err error) {
 	a = &ast.SQL{}
 	for p.currentToken.Type != token.EOS {
 		switch p.currentToken.Type {
-		case token.SEMICOLON, token.EOS:
+		case token.SEMICOLON:
+			p.readToken()
 			return
+		case token.EOS:
+			return a, errors.NewErrParseInvalidToken(p.currentToken)
 		case token.K_WITH, token.K_SELECT, token.K_VALUES:
 			ss, err := p.parseSelectStatement()
 			if err != nil {
 				return a, err
 			}
 			a.SelectStatement = ss
-			p.readToken()
-			logger.Infof("SS: %#+v, %#+v", p.currentToken, p.peekToken())
 		default:
 			return a, errors.NewErrParseInvalidToken(p.currentToken)
 		}
