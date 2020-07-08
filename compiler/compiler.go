@@ -4,8 +4,9 @@ import (
 	"github.com/yakawa/makeDatabase/common/errors"
 	"github.com/yakawa/makeDatabase/compiler/lexer"
 	"github.com/yakawa/makeDatabase/compiler/parser"
+	"github.com/yakawa/makeDatabase/compiler/transformer"
 	"github.com/yakawa/makeDatabase/logger"
-	"github.com/yakawa/makeDatabase/tools/printer"
+	//	"github.com/yakawa/makeDatabase/tools/printer"
 )
 
 func Compile(sql string) (err error) {
@@ -18,7 +19,7 @@ func Compile(sql string) (err error) {
 		logger.Errorf("%+v", err)
 		logger.Errorf("%s", err.(*errors.ErrParseInvalid).PrintStack(10))
 	}
-	x := printer.PrintSQL(a)
-	logger.Infof("\n%s", x)
+
+	transformer.Transform(a)
 	return
 }
