@@ -137,9 +137,18 @@ func (p *parser) parseToS() (ts *ast.TableOrSubquery, err error) {
 		}
 	} else {
 		if p.peekToken().Type == token.PERIOD {
-			ts.Schema = p.currentToken.Literal
+			tmp1 := p.currentToken.Literal
 			p.readToken()
 			p.readToken()
+			if p.peekToken().Type == token.PERIOD {
+				tmp2 := p.currentToken.Literal
+				p.readToken()
+				p.readToken()
+				ts.Schema = tmp1
+				ts.Database = tmp2
+			} else {
+				ts.Database = tmp1
+			}
 		}
 		ts.TableName = p.currentToken.Literal
 	}

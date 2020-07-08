@@ -6,6 +6,7 @@ type FromClause struct {
 
 type TableOrSubquery struct {
 	Schema      string
+	Database    string
 	TableName   string
 	Alias       string
 	Subquery    *SelectStatement
