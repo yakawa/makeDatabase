@@ -3,6 +3,8 @@ package transformer
 import (
 	"errors"
 
+	"github.com/google/uuid"
+
 	"github.com/yakawa/makeDatabase/common/ast"
 	"github.com/yakawa/makeDatabase/common/vm"
 	"github.com/yakawa/makeDatabase/logger"
@@ -60,7 +62,8 @@ func (t *transformer) transformSelectClause(s *ast.SelectClause) ([]vm.Operation
 }
 
 func (t *transformer) transformToS(tos ast.TableOrSubquery) ([]vm.Operation, error) {
-	tbl := table{}
+	ope := []vm.Operation{}
+	tbl := TableInfo{}
 	if tos.TableName != "" {
 		if tos.Schema == "" {
 			tbl.Schema = "."
@@ -73,6 +76,20 @@ func (t *transformer) transformToS(tos ast.TableOrSubquery) ([]vm.Operation, err
 			tbl.Database = tos.Database
 		}
 		tbl.Table = tos.TableName
+
+		tuuid, err := uuid.NewRandom()
+		if err != nil {
+			return nil, err
+		}
+		tid := tuuid.String()
+		getTableOpe := vm.GetTableOpe{
+			Table: tid,
+		}
+
+		t.tl[tid] = tbl
+		t.revTl[tbl] = tid
+
+		ope = append(ope, &getTableOpe)
 	}
-	return nil, nil
+	return ope, nil
 }
