@@ -89,7 +89,11 @@ func (t *transformer) transformToS(tos ast.TableOrSubquery) ([]vm.Operation, err
 		t.tl[tid] = tbl
 		t.revTl[tbl] = tid
 
+		if tos.Alias != "" {
+			t.atl[tos.Alias] = tid
+		}
 		ope = append(ope, &getTableOpe)
 	}
+
 	return ope, nil
 }
