@@ -6,7 +6,7 @@ import (
 	"github.com/yakawa/makeDatabase/compiler/parser"
 	"github.com/yakawa/makeDatabase/compiler/transformer"
 	"github.com/yakawa/makeDatabase/logger"
-	//	"github.com/yakawa/makeDatabase/tools/printer"
+	"github.com/yakawa/makeDatabase/tools/printer"
 )
 
 func Compile(sql string) (err error) {
@@ -20,6 +20,12 @@ func Compile(sql string) (err error) {
 		logger.Errorf("%s", err.(*errors.ErrParseInvalid).PrintStack(10))
 	}
 
-	transformer.Transform(a)
+	opes, tblList, err := transformer.Transform(a)
+	if err != nil {
+		logger.Errorf("%+v", err)
+		logger.Errorf("%s", err.(*errors.ErrParseInvalid).PrintStack(10))
+	}
+	r := printer.PrintIC(opes, tblList)
+	logger.Tracef("%s", r)
 	return
 }

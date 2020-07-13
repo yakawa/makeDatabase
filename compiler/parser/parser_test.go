@@ -241,7 +241,7 @@ func TestExpression(t *testing.T) {
   SELECT:
    ResultColumns:
     - Expression:
-       Schema: d1
+       Database: d1
        Table: t1
        Column: c1
 `),
@@ -793,6 +793,16 @@ func TestExpression(t *testing.T) {
        Column: c1
     - Expression:
        Column: c2
+`),
+		},
+		{"SELECT * FROM t1;",
+			string(`SQL:
+ SELECTStatement:
+  SELECT:
+   ResultColumns:
+  FROM:
+   - ToS:
+      Table: t1
 `),
 		},
 	}

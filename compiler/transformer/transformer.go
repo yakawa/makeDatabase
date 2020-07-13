@@ -6,64 +6,74 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/yakawa/makeDatabase/common/ast"
-	"github.com/yakawa/makeDatabase/common/vm"
+	"github.com/yakawa/makeDatabase/common/ic"
 	"github.com/yakawa/makeDatabase/logger"
 )
 
-type TableInfo struct {
-	IsLocal  bool
-	Schema   string
-	Database string
-	Table    string
-}
-
 type transformer struct {
 	a     *ast.SQL
-	tl    map[string]TableInfo
-	revTl map[TableInfo]string
+	opes  []ic.Operation
+	tl    map[string]ic.TableInfo
+	revTl map[ic.TableInfo]string
 	atl   map[string]string
 }
 
-func Transform(a *ast.SQL) ([]vm.Operation, map[string]TableInfo, error) {
+func Transform(a *ast.SQL) ([]ic.Operation, map[string]ic.TableInfo, error) {
 	t := new(a)
-	ops, err := t.transform()
-	return ops, t.tl, err
+	err := t.transform()
+	return t.opes, t.tl, err
 }
 
 func new(a *ast.SQL) *transformer {
 	return &transformer{
 		a:     a,
-		tl:    make(map[string]TableInfo),
-		revTl: make(map[TableInfo]string),
+		opes:  []ic.Operation{},
+		tl:    make(map[string]ic.TableInfo),
+		revTl: make(map[ic.TableInfo]string),
 		atl:   make(map[string]string),
 	}
 }
 
-func (t *transformer) transform() ([]vm.Operation, error) {
+func (t *transformer) transform() error {
 	if t.a.SelectStatement.WithClause != nil {
 		logger.Errorf("Not Impliment")
-		return nil, errors.New("Not Impliment")
+		return errors.New("Not Impliment")
 	}
 
 	if t.a.SelectStatement.SelectClause != nil {
-		t.transformSelectClause(t.a.SelectStatement.SelectClause)
-	}
-
-	return nil, nil
-}
-
-func (t *transformer) transformSelectClause(s *ast.SelectClause) ([]vm.Operation, error) {
-	if s.FromClause != nil {
-		for _, tos := range s.FromClause.ToS {
-			t.transformToS(tos)
+		t.a.SelectStatement.SelectClause.FromClause != nil {
+			err := t.transformFromClause(t.a.SelectStatement.SelectClause.FromClause)
+			if err != nil {
+				return err
+			}
+		}
+		t.a.SelectStatement.SelectClause.WhereClause != nil {
+			err := t.transformWhereClause(t.a.SelectStatement.SelectClause.WhereClause)
 		}
 	}
-	return nil, nil
+
+	return nil
 }
 
-func (t *transformer) transformToS(tos ast.TableOrSubquery) ([]vm.Operation, error) {
-	ope := []vm.Operation{}
-	tbl := TableInfo{}
+func (t *transformer) transformWhereClayse(w *ast.WhereClause) error {
+	return nil
+}
+
+func (t *transformer) transformFromClause(f *ast.FromClause) error {
+	if f != nil {
+		for _, tos := range f.ToS {
+			err := t.transformToS(tos)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (t *transformer) transformToS(tos ast.TableOrSubquery) error {
+	ope := ic.GetTableOpe{}
+	tbl := ic.TableInfo{}
 	if tos.TableName != "" {
 		if tos.Schema == "" {
 			tbl.Schema = "."
@@ -76,15 +86,13 @@ func (t *transformer) transformToS(tos ast.TableOrSubquery) ([]vm.Operation, err
 			tbl.Database = tos.Database
 		}
 		tbl.Table = tos.TableName
+		tbl.IsLocal = true
 
 		tuuid, err := uuid.NewRandom()
 		if err != nil {
-			return nil, err
+			return err
 		}
 		tid := tuuid.String()
-		getTableOpe := vm.GetTableOpe{
-			Table: tid,
-		}
 
 		t.tl[tid] = tbl
 		t.revTl[tbl] = tid
@@ -92,8 +100,10 @@ func (t *transformer) transformToS(tos ast.TableOrSubquery) ([]vm.Operation, err
 		if tos.Alias != "" {
 			t.atl[tos.Alias] = tid
 		}
-		ope = append(ope, &getTableOpe)
+		ope.Table = tid
 	}
 
-	return ope, nil
+	t.opes = append(t.opes, ope)
+
+	return nil
 }

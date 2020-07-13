@@ -11,11 +11,12 @@ type SelectClause struct {
 }
 
 type ResultColumn struct {
-	Expr       *Expression
-	Alias      string
-	Asterisk   bool
-	SchemaName string
-	TableName  string
+	Expr         *Expression
+	Alias        string
+	Asterisk     bool
+	SchemaName   string
+	DatabaseName string
+	TableName    string
 }
 
 type GroupByExpression struct {

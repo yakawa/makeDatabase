@@ -1,4 +1,4 @@
-package vm
+package ic
 
 type OpeCode int
 type JoinMethod int
@@ -14,6 +14,13 @@ const (
 	FullJoin
 )
 
+type TableInfo struct {
+	IsLocal  bool
+	Schema   string
+	Database string
+	Table    string
+}
+
 type Operation interface {
 	OpeCode() OpeCode
 }
@@ -22,7 +29,7 @@ type GetTableOpe struct {
 	Table string
 }
 
-func (o *GetTableOpe) OpeCode() OpeCode {
+func (o GetTableOpe) OpeCode() OpeCode {
 	return GetTableOpeCode
 }
 

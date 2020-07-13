@@ -88,29 +88,38 @@ func (p *parser) parseResultColumn() (rc ast.ResultColumn, err error) {
 		rc.Asterisk = true
 		return
 	} else if p.currentToken.Type == token.IDENT && p.peekToken().Type == token.PERIOD {
-		tmp := p.currentToken
+		// Schema.Database.Table.Column
+		tmp1 := p.currentToken.Literal
 		p.readToken()
 		p.readToken()
 		if p.currentToken.Type == token.ASTERISK {
-			rc.TableName = tmp.Literal
+			rc.TableName = tmp1
 			rc.Asterisk = true
 			return
 		} else if p.currentToken.Type == token.IDENT {
 			if p.peekToken().Type == token.PERIOD {
-				schema := tmp.Literal
-				table := p.currentToken.Literal
+				tmp2 := p.currentToken.Literal
 				p.readToken()
 				p.readToken()
 				if p.currentToken.Type == token.ASTERISK {
-					rc.SchemaName = schema
-					rc.TableName = table
+					rc.DatabaseName = tmp1
+					rc.TableName = tmp2
 					rc.Asterisk = true
 					return
 				} else if p.currentToken.Type == token.IDENT {
-					p.rewindToken()
-					p.rewindToken()
-					p.rewindToken()
-					p.rewindToken()
+					if p.peekToken().Type == token.PERIOD {
+						tmp3 := p.currentToken.Literal
+						p.readToken()
+						p.readToken()
+						if p.currentToken.Type == token.ASTERISK {
+							rc.SchemaName = tmp1
+							rc.DatabaseName = tmp2
+							rc.TableName = tmp3
+							rc.Asterisk = true
+							return
+						} else if p.currentToken.Type == token.IDENT {
+						}
+					}
 				}
 			} else {
 				p.rewindToken()
